@@ -7,6 +7,10 @@
     text-align: center;
 }
 
+.btn-cta-final {
+    padding: 20px 120px;
+}
+
 @media (max-width: 768px) {
   .cta-final {
     padding: 32px 20px;
