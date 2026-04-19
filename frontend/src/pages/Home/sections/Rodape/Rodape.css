@@ -1,0 +1,193 @@
+.rodape {
+    background-color: var(--main-color);
+    color: var(--button-color);
+    padding: 20px;
+}
+
+.rodape-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.rodape-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+}
+
+.rodape-logo {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+}
+
+.rodape-logo svg {
+    width: 100%;
+    height: 100%;
+}
+
+.rodape-tagline {
+
+    font-weight: 700;
+}
+
+.rodape-cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    padding-top: 8px;
+}
+
+.rodape-col {
+    padding-left: 40px;
+}
+
+.rodape-col h3 {
+   padding-left: 40px;
+}
+
+.rodape-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    list-style: none;
+}
+
+.rodape-link {
+    color: rgba(255, 255, 255, 0.85);
+    transition: color 120ms ease;
+}
+
+.rodape-lista-contatos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rodape-contato-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rodape-contato-item a {
+    text-decoration: none;
+}
+
+.rodape-contato-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.rodape-contato-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.rodape-lista-sociais {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    list-style: none;
+}
+
+.rodape-social-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.85);
+    transition: color 120ms ease;
+    text-decoration: none;
+}
+
+.rodape-link:hover, .rodape-social-link:hover { 
+    color: #fff; 
+}
+
+.rodape-social-icon {
+    width: 16px;
+    height: 16px;
+    fill: var(--button-color);
+}
+
+.rodape-social-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.rodape-divisoria {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 16px 0;
+}
+
+.copyright {
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.copyright p {
+    font-size: 15px;
+}
+
+
+@media (max-width: 768px) {
+  .rodape {
+    padding: 32px 20px;
+  }
+ 
+  .rodape-cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .rodape-col:last-child {
+    grid-column: 1 / -1;
+  }
+ 
+  .rodape-col {
+    padding-left: 0;
+  }
+ 
+  .rodape-col h3 {
+    padding-left: 0;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rodape-brand {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+ 
+  .rodape-tagline {
+    text-align: center;
+  }
+ 
+  .rodape-cols {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+ 
+  .rodape-col:last-child {
+    grid-column: auto;
+  }
+ 
+  .rodape-lista-sociais {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+ 
+  .copyright p {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}
+ 

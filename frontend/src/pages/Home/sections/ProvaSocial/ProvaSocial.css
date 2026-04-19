@@ -1,0 +1,149 @@
+.prova-social {
+    background-color: var(--main-neutral-color);
+    padding: 40px;
+    gap: 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 2px solid var(--secondary-neutral-color);
+    border-bottom: 2px solid var(--secondary-neutral-color);
+}
+
+.btn-borda-preta {
+    border: 2px solid var(--title-text-color);
+    margin-top: auto;
+}
+
+.comentarios, .impactos {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    
+}
+
+.impactos {
+    padding-left: 40px;
+    border-left: 2px solid var(--secondary-neutral-color);
+}
+
+.depoimentos {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.depoimento {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.header-depoimento {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--main-color);
+    color: var(--main-neutral-color);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.meta-depoimento {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nome {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--title-text-color);
+}
+
+.tempo {
+    font-size: 12px;
+    color: var(--body-text-color);
+}
+
+.texto-depoimento {
+    font-size: var(--font-size-base);
+    color: var(--body-text-color);
+}
+
+.acoes {
+    display: flex;
+    gap: 12px;
+}
+
+.like {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--body-text-color);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: color 120ms ease;
+}
+
+.like:hover { 
+    color: var(--main-color); 
+}
+
+.impactos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+}
+
+.impacto-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.impacto-item-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .prova-social {
+    grid-template-columns: 1fr;
+    padding: 32px 20px;
+    gap: 40px;
+  }
+ 
+  .impactos {
+    padding-left: 0;
+    border-left: none;
+    border-top: 2px solid var(--secondary-neutral-color);
+    padding-top: 32px;
+  }
+ 
+  .impactos-lista {
+    gap: 32px;
+  }
+ 
+  .btn-borda-preta {
+    width: 100%;
+    margin-top: 8px;
+  }
+ 
+  .depoimento {
+    padding: 12px 0;
+  }
+}

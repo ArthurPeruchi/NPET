@@ -1,0 +1,20 @@
+.cta-final {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+  .cta-final {
+    padding: 32px 20px;
+    gap: 16px;
+  }
+
+  .cta-final .botao {
+    width: 100%;
+  }
+}
+ 

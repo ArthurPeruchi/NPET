@@ -1,0 +1,134 @@
+.sobre {
+    background-color: var(--main-color);
+    padding: 40px;
+    border-top: 2px solid var(--secondary-neutral-color);
+    border-bottom: 2px solid var(--secondary-neutral-color);
+}
+
+.sobre-inner {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 48px;
+    align-items: start;
+}
+
+.sobre-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.texto-sobre {
+    color: var(--button-color);
+}
+
+.card-sobre {
+    position: sticky;
+    top: 80px;
+}
+
+.card-impacto {
+    background: var(--background-color);
+    border: 1px solid var(--secondary-neutral-color);
+    border-radius: 12px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(38, 130, 93, 0.08);
+}
+
+.card-impacto-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--main-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25)
+}
+
+.card-impacto-value {
+    font-size: 20px;
+    color: var(--body-text-color);
+    margin-top: 0px;
+    margin-bottom: 30px;
+}
+
+.card-impacto-label {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--title-text-color);
+}
+
+.card-impacto-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.card-impacto-arrow {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--body-text-color);
+    padding: 0 2px;
+    line-height: 1;
+    transition: color 120ms ease;
+}
+
+.card-impacto-arrow:hover {
+    color: var(--main-color);
+}
+
+.card-impacto-dots {
+    display: flex;
+    gap: 5px;
+}
+
+.card-impacto-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--secondary-neutral-color);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 150ms ease;
+}
+
+.card-impacto-dot--active {
+    background: var(--main-color);
+}
+
+@media (max-width: 768px) {
+  .sobre {
+    padding: 32px 20px;
+  }
+ 
+  .sobre-inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+ 
+  .card-sobre {
+    position: static;
+    display: flex;
+    justify-content: center;
+  }
+ 
+  .card-impacto {
+    width: 100%;
+    max-width: 300px;
+  }
+ 
+  .sobre-texto h2 {
+    font-size: clamp(20px, 5vw, 26px);
+  }
+ 
+}
