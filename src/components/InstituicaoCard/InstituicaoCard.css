@@ -1,0 +1,114 @@
+.card-instituicao {
+    background: #F8F8F8;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: box-shadow 160ms ease, border-color 160ms ease;
+    overflow: hidden;
+}
+
+.card-instituicao:hover {
+    border-color: var(--title-text-color);
+    box-shadow: 0 4px 16px rgba(38, 130, 93, 0.1);
+}
+
+.btn-borda-preta {
+    border: 2px solid var(--title-text-color)
+}
+
+.card-instituicao-wrapper-logo {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}
+
+.card-instituicao-logo {
+    max-height: 70px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.card-instituicao-logo-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: var(--main-color);
+}
+
+.card-instituicao-body{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.card-instituicao-nome {
+    font-size: var(--font-size-base);
+    color: var(--title-text-color);
+    text-align: center;
+}
+
+.card-instituicao-local {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--body-text-color);
+}
+
+.card-instituicao-pin {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--main-color);
+}
+
+@media (max-width: 768px) {
+  .card-instituicao {
+    /* No mobile o card fica em linha: logo à esquerda, info à direita */
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+  }
+ 
+  .card-instituicao-wrapper-logo {
+    height: 64px;
+    width: 64px;
+    flex-shrink: 0;
+    padding: 4px;
+  }
+ 
+  .card-instituicao-logo-placeholder {
+    width: 56px;
+    height: 56px;
+  }
+ 
+  .card-instituicao-body {
+    flex: 1;
+    min-width: 0;
+  }
+ 
+  .card-instituicao-nome {
+    text-align: left;
+  }
+ 
+  .card-instituicao-local {
+    justify-content: flex-start;
+  }
+ 
+  .card-instituicao {
+    flex-wrap: wrap;
+  }
+ 
+  .card-instituicao > .botao,
+  .card-instituicao > button {
+    width: 100%;
+    flex-basis: 100%;
+  }
+}

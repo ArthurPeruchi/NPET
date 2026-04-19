@@ -1,0 +1,33 @@
+.navbar {
+    display: flex;
+    background-color: var(--main-color);
+    justify-content: space-around;
+    width: 100%;
+    align-items: center;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--secondary-neutral-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.navbar a {
+    color: var(--button-color);
+    text-decoration: none;
+    font-size: 20px;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 40px;
+}
+
+.navbar ul li {
+    display: flex;
+    align-items: center;
+    /* width: 120px; */
+}
