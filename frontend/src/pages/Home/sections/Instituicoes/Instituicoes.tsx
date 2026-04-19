@@ -4,11 +4,17 @@ import InstituicaoCard from "../../../../components/InstituicaoCard/InstituicaoC
 import "./Instituicoes.css";
 
 // Dados mockados para as instituições :D
+import logoASPAAN from "../../../../assets/logos-mockadas-instituicoes/logoASPAAN.png";
+import logoPatasSolidarias from "../../../../assets/logos-mockadas-instituicoes/logoPatasSolidarias.png";
+import logoSOSAnimais from "../../../../assets/logos-mockadas-instituicoes/logoSOSAnimais.png";
+import logoMiauAuau from "../../../../assets/logos-mockadas-instituicoes/logoMiauAuau.png";
+import logoUni from "../../../../assets/logos-mockadas-instituicoes/logoUni.png";
+
 const INSTITUICOES = [
   {
     id: 1,
     nome: 'UniEVANGÉLICA - Universidade Evangélica de Goiás',
-    logo: null,
+    logo: logoUni,
     cidade: 'Anápolis',
     uf: 'GO',
     cnpj: '—',
@@ -19,7 +25,7 @@ const INSTITUICOES = [
   {
     id: 2,
     nome: 'ASPAAN - Associação Protetora e Amiga dos Animais',
-    logo: null,
+    logo: logoASPAAN,
     cidade: 'Anápolis',
     uf: 'GO',
     cnpj: '11.102.088/0001-79',
@@ -30,7 +36,7 @@ const INSTITUICOES = [
   {
     id: 3,
     nome: 'ONG Patas Solidárias - Associação Amigos em Ação',
-    logo: null,
+    logo: logoPatasSolidarias,
     cidade: 'Anápolis',
     uf: 'GO',
     cnpj: '—',
@@ -41,7 +47,7 @@ const INSTITUICOES = [
   {
     id: 4,
     nome: 'SOS Animais Anápolis',
-    logo: null,
+    logo: logoSOSAnimais,
     cidade: 'Anápolis',
     uf: 'GO',
     cnpj: '—',
@@ -52,8 +58,8 @@ const INSTITUICOES = [
   {
     id: 5,
     nome: 'Grupo Miau AuAu - Proteção aos Animais',
-    logo: null,
-    cidade: 'Anápolis',
+    logo: logoMiauAuau,
+    cidade: 'Goiânia',
     uf: 'GO',
     cnpj: '—',
     animais: '~80 animais',
@@ -67,8 +73,8 @@ const CARDS_VISIVEIS = 3;
 export default function Instituicoes() {
   const [inicio, setInicio] = useState(0);
   
-  const [modalAberto, setModalAberto] = useState(false);
-  const [instSelecionada, setInstSelecionada] = useState(null);
+  // const [modalAberto, setModalAberto] = useState(false);
+  // const [instSelecionada, setInstSelecionada] = useState(null);
 
   const podePrev = inicio > 0;
   const podeNext = inicio + CARDS_VISIVEIS < INSTITUICOES.length;
@@ -76,15 +82,17 @@ export default function Instituicoes() {
   const prev = () => { if (podePrev) setInicio(i => i - 1); };
   const next = () => { if (podeNext) setInicio(i => i + 1); };
   
-  const abrirDetalhes = (inst) => {
+  /* const abrirDetalhes = (inst) => {
     setInstSelecionada(inst);
     setModalAberto(true);
   };
+  
 
   const fecharModal = () => {
     setModalAberto(false);
     setInstSelecionada(null);
   };
+  */
  
   const visiveis = INSTITUICOES.slice(inicio, inicio + CARDS_VISIVEIS);
 
@@ -109,7 +117,7 @@ export default function Instituicoes() {
                 <InstituicaoCard
                   key={inst.id}
                   instituicao={inst}
-                  onVerDetalhes={abrirDetalhes}
+                  onVerDetalhes={() => {}}
                 />
               ))}
             </div>
