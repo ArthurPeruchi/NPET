@@ -28,14 +28,14 @@
 }
 
 .card-instituicao-logo {
-    max-height: 70px;
+    max-height: 100px;
     max-width: 100%;
     object-fit: contain;
 }
 
 .card-instituicao-logo-placeholder {
-    width: 70px;
-    height: 70px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     background: var(--main-color);
 }
@@ -70,7 +70,6 @@
 
 @media (max-width: 768px) {
   .card-instituicao {
-    /* No mobile o card fica em linha: logo à esquerda, info à direita */
     flex-direction: row;
     align-items: center;
     gap: 16px;
