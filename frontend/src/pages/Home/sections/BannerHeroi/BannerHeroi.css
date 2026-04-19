@@ -35,6 +35,12 @@
   transition: color 120ms ease;
 }
 
+@media (max-width: 1300px) {
+  .hero-image {
+    height: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .banner-hero {
     grid-template-columns: 1fr;
