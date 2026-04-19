@@ -1,19 +1,165 @@
+import { useState, useRef, useEffect } from "react";
+// import { useLocation } from "react-router-dom";
+import logoNpet from "../../assets/logoNpet.png";
 import "./NavBar.css";
 
+const LINKS_PRINCIPAIS = [
+    { label: "Início",     href: "/" },
+    { label: "Doar",    href: "/doacoes" },
+    { label: "Histórico",  href: "/historico" },
+    { label: "Parcerias",  href: "/parcerias" },
+    { label: "Avaliações", href: "/avaliacoes" },
+    { label: "Suporte",    href: "/suporte" },
+];
+ 
+const DROPDOWN_PERFIL = [
+    { label: "Ver Perfil", href: "/perfil" },
+    { label: "Sair",       href: "/sair" },
+];
+
 export default function NavBar() {
+
+    // const location = useLocation();
+    const [perfilAberto,  setPerfilAberto]  = useState(false);
+    const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+
+    const refPerfil  = useRef<HTMLLIElement>(null);
+
+
+    /* Fecha menu mobile ao navegar */
+    useEffect(() => {
+        setMenuMobileAberto(false);
+        setPerfilAberto(false);
+    }, [location.pathname]);
+
+    const isAtivo = (href: string) =>
+        href === "/"
+        ? location.pathname === "/"
+        : location.pathname.startsWith(href);
+    
     return (
         <>
             <nav className="navbar">
-                <ul>
-                    <li><a href="/">Início</a></li>
-                    <li><a href="/doacoes">Doar</a></li>
-                    <li><a href="/historico">Histórico</a></li>
-                    <li><a href="/parcerias">Parcerias</a></li>
-                    <li><a href="/avaliacoes">Avaliações</a></li>
-                    <li><a href="/suporte">Suporte</a></li>
-                    <li><a href="/perfil">Perfil</a></li>
+                <a href="/" className="navbar-logo" aria-label="Página inicial do NPET">
+                    <img src={logoNpet} alt="Logo NPET" className="navbar-logo-img" />
+                </a>
+                        
+                <ul className="navbar-links" role="menubar">
+                    {LINKS_PRINCIPAIS.map(link => (
+                        <li key={link.href} role="none">
+                        <a
+                            href={link.href}
+                            className={`navbar-link${isAtivo(link.href) ? " navbar-link--ativo" : ""}`}
+                            role="menuitem"
+                            aria-current={isAtivo(link.href) ? "page" : undefined}
+                        >
+                            {link.label}
+                        </a>
+                        </li>
+                    ))}
                 </ul>
-            </nav>    
+
+                {/* ── Perfil desktop ── */}
+                <li ref={refPerfil} className="navbar-perfil-wrap" role="none">
+                <button
+                    className="navbar-perfil-btn"
+                    aria-haspopup="true"
+                    aria-expanded={perfilAberto}
+                    aria-label="Menu do usuário"
+                    onClick={() => {
+                        setPerfilAberto(v => !v);
+                    }}
+                >
+                    <span className="navbar-perfil-icone" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
+                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                    </svg>
+                    </span>
+                    <svg
+                    className={`navbar-chevron${perfilAberto ? " navbar-chevron--aberto" : ""}`}
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    aria-hidden="true"
+                    >
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6"
+                        strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
+
+                {perfilAberto && (
+                    <ul className="navbar-dropdown navbar-dropdown--direita" role="menu" aria-label="Menu do perfil">
+                    {DROPDOWN_PERFIL.map(item => (
+                        <li key={item.href} role="none">
+                        <a
+                            href={item.href}
+                            className={`navbar-dropdown-item${item.label === "Sair" ? " navbar-dropdown-item--sair" : ""}`}
+                            role="menuitem"
+                        >
+                            {item.label}
+                        </a>
+                        </li>
+                    ))}
+                    </ul>
+                )}
+                </li>
+
+                {/* ── Hambúrguer mobile ──  */ }
+                <button
+                className={`navbar-hamburger${menuMobileAberto ? " navbar-hamburger--aberto" : ""}`}
+                aria-label={menuMobileAberto ? "Fechar menu" : "Abrir menu"}
+                aria-expanded={menuMobileAberto}
+                aria-controls="navbar-mobile-menu"
+                onClick={() => setMenuMobileAberto(v => !v)}
+                >
+                <span /><span /><span />
+                </button>
+
+            </nav>
+
+            {/* ── Gaveta mobile ──  */}
+            {menuMobileAberto && (
+                <div
+                className="navbar-mobile-overlay"
+                onClick={() => setMenuMobileAberto(false)}
+                aria-hidden="true"
+                />
+            )}
+
+            <aside
+                id="navbar-mobile-menu"
+                className={`navbar-mobile${menuMobileAberto ? " navbar-mobile--aberto" : ""}`}
+                aria-label="Menu de navegação mobile"
+            >
+                <ul className="navbar-mobile-links">
+                    {LINKS_PRINCIPAIS.map(link => (
+                        <li key={link.href}>
+                        <a
+                            href={link.href}
+                            className={`navbar-mobile-link${isAtivo(link.href) ? " navbar-mobile-link--ativo" : ""}`}
+                        >
+                            {link.label}
+                        </a>
+                        </li>
+                    ))}
+                </ul>
+
+                <div className="navbar-mobile-divider" />
+
+                <ul className="navbar-mobile-links">
+                {DROPDOWN_PERFIL.map(item => (
+                    <li key={item.href}>
+                    <a
+                        href={item.href}
+                        className={`navbar-mobile-link${item.label === "Sair" ? " navbar-mobile-link--sair" : ""}`}
+                    >
+                        {item.label}
+                    </a>
+                    </li>
+                ))}
+                </ul>
+            </aside> 
         </>
     )
 }
