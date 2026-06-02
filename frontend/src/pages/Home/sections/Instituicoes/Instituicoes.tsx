@@ -5,10 +5,12 @@ import "./Instituicoes.css";
 
 // Dados mockados para as instituições :D
 import logoASPAAN from "../../../../assets/logos-mockadas-instituicoes/logoASPAAN.png";
+import logoUni from "../../../../assets/logos-mockadas-instituicoes/logoUni.png";
+/*
 import logoPatasSolidarias from "../../../../assets/logos-mockadas-instituicoes/logoPatasSolidarias.png";
 import logoSOSAnimais from "../../../../assets/logos-mockadas-instituicoes/logoSOSAnimais.png";
 import logoMiauAuau from "../../../../assets/logos-mockadas-instituicoes/logoMiauAuau.png";
-import logoUni from "../../../../assets/logos-mockadas-instituicoes/logoUni.png";
+*/
 
 const INSTITUICOES = [
   {
@@ -35,8 +37,7 @@ const INSTITUICOES = [
   },
   {
     id: 3,
-    nome: 'ONG Patas Solidárias - Associação Amigos em Ação',
-    logo: logoPatasSolidarias,
+    nome: 'Instituição Parceira 3',
     cidade: 'Anápolis',
     uf: 'GO',
     cnpj: '—',
@@ -46,8 +47,7 @@ const INSTITUICOES = [
   },
   {
     id: 4,
-    nome: 'SOS Animais Anápolis',
-    logo: logoSOSAnimais,
+    nome: 'Instituição Parceira 4',
     cidade: 'Anápolis',
     uf: 'GO',
     cnpj: '—',
@@ -57,8 +57,7 @@ const INSTITUICOES = [
   },
   {
     id: 5,
-    nome: 'Grupo Miau AuAu - Proteção aos Animais',
-    logo: logoMiauAuau,
+    nome: 'Instituição Parceira 5',
     cidade: 'Goiânia',
     uf: 'GO',
     cnpj: '—',
