@@ -46,8 +46,10 @@
 .navbar-link {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   height: 56px;
+  min-width: 80px;
   padding: 0 16px;
   color: rgba(255, 255, 255, 0.88);
   text-decoration: none;
@@ -158,8 +160,10 @@
 .navbar-perfil-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   height: 56px;
+  width: 160px;
   padding: 0 12px;
   background: none;
   border: none;
@@ -180,6 +184,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  background-color: rgba(255, 255, 255);
   border: 1.5px solid rgba(255, 255, 255, 0.6);
 }
 
@@ -317,6 +322,17 @@
 .navbar-mobile-divider {
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   margin: 8px 0;
+}
+
+@media (max-width: 1024px) {
+  .navbar-link {
+    min-width: 0;
+  }
+
+  .navbar-perfil-btn {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 768px) {
