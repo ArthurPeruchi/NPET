@@ -55,7 +55,16 @@
   .instituicoes {
     padding: 32px 20px;
   }
+
+  .instituicoes-title {
+    text-align: center;
+    margin-bottom: 30px;
+  }
  
+  .instituicoes-texto-parceiro {
+    text-align: center;
+  }
+
   .instituicoes-cards {
     grid-template-columns: 1fr;
   }
@@ -73,10 +82,6 @@
   .btn-parceiro {
     width: 100%;
     align-self: stretch;
-  }
- 
-  .instituicoes h2:first-of-type {
-    font-size: clamp(18px, 5vw, 22px);
   }
 }
 

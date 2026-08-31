@@ -2,76 +2,16 @@ import { useState } from "react";
 import Botao from "../../../../components/Botao/Botao";
 import InstituicaoCard from "../../../../components/InstituicaoCard/InstituicaoCard";
 import "./Instituicoes.css";
-
-// Dados mockados para as instituições :D
-import logoASPAAN from "../../../../assets/logos-mockadas-instituicoes/logoASPAAN.png";
-import logoUni from "../../../../assets/logos-mockadas-instituicoes/logoUni.png";
-/*
-import logoPatasSolidarias from "../../../../assets/logos-mockadas-instituicoes/logoPatasSolidarias.png";
-import logoSOSAnimais from "../../../../assets/logos-mockadas-instituicoes/logoSOSAnimais.png";
-import logoMiauAuau from "../../../../assets/logos-mockadas-instituicoes/logoMiauAuau.png";
-*/
-
-const INSTITUICOES = [
-  {
-    id: 1,
-    nome: 'UniEVANGÉLICA - Universidade Evangélica de Goiás',
-    logo: logoUni,
-    cidade: 'Anápolis',
-    uf: 'GO',
-    cnpj: '—',
-    animais: '—',
-    horario: '—',
-    descricao: 'Universidade parceira no desenvolvimento do projeto NPET.',
-  },
-  {
-    id: 2,
-    nome: 'ASPAAN - Associação Protetora e Amiga dos Animais',
-    logo: logoASPAAN,
-    cidade: 'Anápolis',
-    uf: 'GO',
-    cnpj: '11.102.088/0001-79',
-    animais: '~700 animais',
-    horario: 'Sem horário fixo',
-    descricao: 'ONG que cuida e protege animais em situação de vulnerabilidade em Anápolis.',
-  },
-  {
-    id: 3,
-    nome: 'Instituição Parceira 3',
-    cidade: 'Anápolis',
-    uf: 'GO',
-    cnpj: '—',
-    animais: '~200 animais',
-    horario: 'Segunda a sexta, 8h–17h',
-    descricao: 'Associação dedicada ao resgate e adoção responsável de animais.',
-  },
-  {
-    id: 4,
-    nome: 'Instituição Parceira 4',
-    cidade: 'Anápolis',
-    uf: 'GO',
-    cnpj: '—',
-    animais: '~150 animais',
-    horario: 'Todos os dias, 7h–18h',
-    descricao: 'Grupo voluntário focado em resgates emergenciais e cuidados veterinários.',
-  },
-  {
-    id: 5,
-    nome: 'Instituição Parceira 5',
-    cidade: 'Goiânia',
-    uf: 'GO',
-    cnpj: '—',
-    animais: '~80 animais',
-    horario: 'Fins de semana',
-    descricao: 'Grupo independente que promove adoções e campanhas de castração.',
-  },
-];
-
-const CARDS_VISIVEIS = 3;
+import { INSTITUICOES } from "../../../../mocks/mockInstituicoes";
+import useIsMobile from "../../../../hooks/useIsMobile";
 
 export default function Instituicoes() {
   const [inicio, setInicio] = useState(0);
   
+  const isMobile = useIsMobile();
+  
+  const CARDS_VISIVEIS = isMobile ? 1 : 3;
+
   // const [modalAberto, setModalAberto] = useState(false);
   // const [instSelecionada, setInstSelecionada] = useState(null);
 
@@ -97,7 +37,7 @@ export default function Instituicoes() {
 
   return (
     <section className="instituicoes">
-        <h2>Conheça nossas Instituições Parceiras</h2>
+        <h2 className="instituicoes-title">Conheça nossas Instituições Parceiras</h2>
         <div className="instituicoes-carrossel" role="region" aria-label="Carrossel de instituições">
             <button
               className="instituicoes-carrosel-arrow"
@@ -135,8 +75,8 @@ export default function Instituicoes() {
           </button>
         </div>
 
-        <h2>Tem interesse em se tornar um parceiro?</h2>
-        <p>
+        <h2 className="instituicoes-title">Tem interesse em se tornar um parceiro?</h2>
+        <p className="instituicoes-texto-parceiro">
             Se você representa uma ONG, clínica veterinária, empresa do setor pet, ou deseja apoiar a causa de forma estruturada,
             o NPET quer caminhar com você. Sua instituição pode fazer parte da nossa rede!
         </p>

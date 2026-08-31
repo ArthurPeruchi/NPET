@@ -1,0 +1,57 @@
+import logoASPAAN from "../assets/logos-mockadas-instituicoes/logoASPAAN.png";
+import logoUni from "../assets/logos-mockadas-instituicoes/logoUni.png";
+
+export const INSTITUICOES = [
+  {
+    id: 1,
+    nome: 'UniEVANGÉLICA - Universidade Evangélica de Goiás',
+    logo: logoUni,
+    cidade: 'Anápolis',
+    uf: 'GO',
+    cnpj: '—',
+    animais: '—',
+    horario: '—',
+    descricao: 'Universidade parceira no desenvolvimento do projeto NPET.',
+  },
+  {
+    id: 2,
+    nome: 'ASPAAN - Associação Protetora e Amiga dos Animais',
+    logo: logoASPAAN,
+    cidade: 'Anápolis',
+    uf: 'GO',
+    cnpj: '11.102.088/0001-79',
+    animais: '~700 animais',
+    horario: 'Sem horário fixo',
+    descricao: 'ONG que cuida e protege animais em situação de vulnerabilidade em Anápolis.',
+  },
+  {
+    id: 3,
+    nome: 'Instituição Parceira 3',
+    cidade: 'Anápolis',
+    uf: 'GO',
+    cnpj: '—',
+    animais: '~200 animais',
+    horario: 'Segunda a sexta, 8h–17h',
+    descricao: 'Associação dedicada ao resgate e adoção responsável de animais.',
+  },
+  {
+    id: 4,
+    nome: 'Instituição Parceira 4',
+    cidade: 'Anápolis',
+    uf: 'GO',
+    cnpj: '—',
+    animais: '~150 animais',
+    horario: 'Todos os dias, 7h–18h',
+    descricao: 'Grupo voluntário focado em resgates emergenciais e cuidados veterinários.',
+  },
+  {
+    id: 5,
+    nome: 'Instituição Parceira 5',
+    cidade: 'Goiânia',
+    uf: 'GO',
+    cnpj: '—',
+    animais: '~80 animais',
+    horario: 'Fins de semana',
+    descricao: 'Grupo independente que promove adoções e campanhas de castração.',
+  },
+];
