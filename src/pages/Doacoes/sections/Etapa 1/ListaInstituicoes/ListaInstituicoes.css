@@ -1,0 +1,29 @@
+.lista-instituicoes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    width: 98%;
+    margin: 0 auto;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 1024px) {
+    .lista-instituicoes {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .lista-instituicoes {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
+
+.lista-instituicoes--vazia {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
