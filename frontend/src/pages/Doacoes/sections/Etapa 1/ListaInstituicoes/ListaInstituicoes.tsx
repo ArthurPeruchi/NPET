@@ -4,20 +4,17 @@ import type { Instituicao } from "../../../../../types/domain";
 
 type ListaInstituicoesProps = {
     instituicoes: Instituicao[];
+    onVerDetalhes: (inst: Instituicao) => void;
     onDoar: () => void;
 };
 
-export default function ListaInstituicoes({ instituicoes, onDoar }: ListaInstituicoesProps) {
-    
-    const instituicoesParaDoar = instituicoes.filter(
-        inst => inst.nome !== "UniEVANGÉLICA - Universidade Evangélica de Goiás"
-    );
+export default function ListaInstituicoes({ 
+    instituicoes, 
+    onVerDetalhes, 
+    onDoar 
+}: ListaInstituicoesProps) {
 
-
-    function handleClickDetalhes(instituicao: Instituicao) {
-        // console.log(`Visualizando detalhes da instituição: ${instituicao.nome}`);
-        return;
-    }
+    const instituicoesParaDoar = instituicoes.filter(inst => inst.aceitaDoacoes);
     
     if (instituicoesParaDoar.length === 0) {
         return (
@@ -33,7 +30,7 @@ export default function ListaInstituicoes({ instituicoes, onDoar }: ListaInstitu
                 <InstituicaoCard
                     key={inst.id}
                     instituicao={inst}
-                    onVerDetalhes={() => handleClickDetalhes(inst)}
+                    onVerDetalhes={onVerDetalhes}
                     onDoar={onDoar}
                 />
             ))}
