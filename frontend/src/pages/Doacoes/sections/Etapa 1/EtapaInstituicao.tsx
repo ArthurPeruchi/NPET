@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import SelecaoInstituicao from "./SelecaoInstituicao/SelecaoInstituicao";
 import ListaInstituicoes from "./ListaInstituicoes/ListaInstituicoes";
 import { INSTITUICOES } from "../../../../mocks/mockInstituicoes";
+import ModalInstituicao from "../../../../components/ModalInstituicao/ModalInstituicao";
+import type { Instituicao } from "../../../../types/domain";
 
 type EtapaInstituicaoProps = {
     onAvancar: () => void;
@@ -9,6 +11,8 @@ type EtapaInstituicaoProps = {
 
 export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
     const [termoBusca, setTermoBusca] = useState("");
+
+    const [instSelecionada, setInstSelecionada] = useState<Instituicao | null>(null);
 
     const instituicoesFiltradas = useMemo(() =>
         INSTITUICOES.filter(inst =>
@@ -19,8 +23,7 @@ export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
     );
 
     function handleClickDoar(){
-        // alert("Você selecionou uma instituição para doar!"); // Exibe um alerta de confirmação
-        onAvancar(); // Avança para a próxima etapa
+        onAvancar();
         return;
     }
 
@@ -32,8 +35,20 @@ export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
             />
             <ListaInstituicoes
                 instituicoes={instituicoesFiltradas}
+                onVerDetalhes={setInstSelecionada}
                 onDoar={handleClickDoar}
             />
+
+            {instSelecionada && (
+                <ModalInstituicao
+                    instituicao={instSelecionada}
+                    onFechar={() => setInstSelecionada(null)}
+                    onDoar={() => {
+                        setInstSelecionada(null);
+                        onAvancar();
+                    }}
+                />
+            )}
         </>
     );
 }
