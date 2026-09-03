@@ -21,6 +21,13 @@
     }
 }
 
+@media (max-width: 480px) {
+    .lista-instituicoes {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
 .lista-instituicoes--vazia {
     display: flex;
     justify-content: center;
