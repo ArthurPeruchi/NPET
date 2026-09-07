@@ -6,11 +6,14 @@ import "./Instituicoes.css";
 import { INSTITUICOES } from "../../../../mocks/mockInstituicoes";
 import type { Instituicao } from "../../../../types/domain";
 import useIsMobile from "../../../../hooks/useIsMobile";
+import { useNavigate } from "react-router-dom";
 
 export default function Instituicoes() {
   const [inicio, setInicio] = useState(0);
   const isMobile = useIsMobile();
   const CARDS_VISIVEIS = isMobile ? 1 : 3;
+
+  const navigate = useNavigate();
 
   const [instSelecionada, setInstSelecionada] = useState<Instituicao | null>(null);
 
@@ -78,7 +81,12 @@ export default function Instituicoes() {
         <ModalInstituicao
           instituicao={instSelecionada}
           onFechar={() => setInstSelecionada(null)}
-          onDoar={() => { window.location.href = "/doacoes"; }}
+          onDoar={(inst) => {
+            setInstSelecionada(null);
+            navigate("/doacoes", {
+                state: { instituicaoPreSelecionada: inst }
+            });
+        }}
         />
       )}
     </section>
