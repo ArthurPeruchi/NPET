@@ -42,6 +42,11 @@ export interface Doacao {
     feedback?: string;
 }
 
+export interface DadosDoacao {
+    idInstituicao: number | null;
+    tipoDoacao?: TipoDoacao;
+}
+
 export interface ItemDoacaoProduto {
     id: number;
     nome: string;
