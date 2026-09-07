@@ -4,7 +4,7 @@ import logoNpet from "../../assets/logoNpet.png";
 import "./NavBar.css";
 
 const LINKS_PRINCIPAIS = [
-    { label: "Início",     href: "/" },
+    { label: "Início",     href: "/inicio" },
     { label: "Doar",    href: "/doacoes" },
     { label: "Histórico",  href: "/historico" },
     { label: "Parcerias",  href: "/parcerias" },
@@ -14,7 +14,7 @@ const LINKS_PRINCIPAIS = [
  
 const DROPDOWN_PERFIL = [
     { label: "Ver Perfil", href: "/perfil" },
-    { label: "Sair",       href: "/sair" },
+    { label: "Sair",       href: "/" },
 ];
 
 export default function NavBar() {

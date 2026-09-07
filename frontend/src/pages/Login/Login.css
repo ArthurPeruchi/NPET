@@ -1,0 +1,157 @@
+.login-pagina {
+    min-height: 100dvh;
+    box-sizing: border-box;
+    background-color: var(--main-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+}
+
+.login-card {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+.login-topo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 32px 40px 24px;
+}
+
+.login-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+.login-nome {
+    font-size: var(--font-size-titulo);
+    font-weight: 700;
+    color: var(--title-text-color);
+    letter-spacing: -0.5px;
+}
+
+.login-divisor {
+    border: none;
+    border-top: 1px solid var(--secondary-neutral-color);
+    margin: 0;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 32px 40px 8px;
+}
+
+.login-campo {
+    border: 1px solid var(--secondary-neutral-color);
+    border-radius: 8px; 
+    margin: 0;
+    transition: border-color 150ms ease;
+    padding: 8px 12px 14px;
+}
+
+.login-campo:focus-within {
+    border-color: var(--main-color);
+}
+
+.login-campo-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--title-text-color);
+    padding: 0 6px;
+}
+
+.login-input {
+    display: block;
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--body-text-color);
+    background: transparent;
+}
+
+.login-input::placeholder {
+    color: var(--secondary-neutral-color, #AAAAAA);
+}
+
+.login-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--main-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    display: inline;
+    transition: color 120ms ease;
+    text-align: left;
+}
+
+.login-link:hover {
+    color: var(--hover-main-color);
+}
+
+.login-campo .login-link {
+    display: block;
+    margin-top: 6px;
+    text-align: left;
+}
+
+.login-erro {
+    font-size: 13px;
+    color: #B91C1C;
+    margin: -4px 0 0;
+}
+
+.login-criar-conta {
+    text-align: center;
+    font-size: 14px;
+    color: var(--body-text-color);
+    padding: 16px 40px 32px;
+}
+
+.btn-login {
+    margin-top: 20px;
+}
+
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset;
+    -webkit-text-fill-color: #000;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+
+@media (max-width: 480px) {
+    .login-pagina {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .login-card {
+        border-radius: 20px 20px 0 0;
+        max-width: 100%;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .login-topo,
+    .login-form,
+    .login-criar-conta {
+        padding-inline: 24px;
+    }
+}
