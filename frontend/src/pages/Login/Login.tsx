@@ -13,6 +13,8 @@ export default function Login() {
     const [senha, setSenha]     = useState("");
     const [erro,  setErro]      = useState<string | null>(null);
 
+    const [tipoUsuario, setTipoUsuario] = useState<"instituicao" | "doador">("doador");
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErro(null);
@@ -30,7 +32,19 @@ export default function Login() {
         }
 
         try {
-            const response = await fetch(`${api_url}/auth/login`, {
+
+            /* 
+            No ciclo 2 do NPET, não precisará de diferentes endpoints para login de
+            diferentes tipos de usuário, mas por enquanto, precisa ser assim porque o
+            back ainda não retorna o tipo de usuário.
+            */
+
+            const endpoint = 
+                tipoUsuario === "instituicao" 
+                    ? "institutions/auth/login" 
+                    : "auth/login";
+
+            const response = await fetch(`${api_url}/${endpoint}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -43,14 +57,17 @@ export default function Login() {
             const data = await response.json();
 
             if (!response.ok) {
-                setErro(data.message || "Erro ao fazer login.");
+                setErro(data.detail || "Erro ao fazer login.");
                 return;
             }
 
             console.log("Login bem-sucedido:", data);
-
-            // No ciclo 2 do NPET, aqui irá salvar o token!
             
+            /* 
+            No ciclo 2 do NPET, aqui irá salvar o token!
+            */
+            localStorage.setItem("role", tipoUsuario);
+
             setTimeout(() => {
                 navigate("/inicio");
             }, 100);
@@ -60,7 +77,6 @@ export default function Login() {
             setErro("Erro ao fazer login. Tente novamente mais tarde.");
         }
     }
-    
     
     return (
         <div className="login-pagina">
@@ -147,6 +163,36 @@ export default function Login() {
                     </button>
                 </p>
 
+                <hr className="login-divisor" />
+                <div className="login-tipo-usuario">
+                    <p className="login-tipo-usuario">
+                        Mude o tipo de usuário nos botões abaixo! Está assim por enquanto
+                        porque o backend ainda não retorna a role do usuário; será ajustado 
+                        no Ciclo 2.
+                    </p>
+
+                    <p className="login-tipo-atual">
+                        Tipo de usuário atual: <strong>{tipoUsuario}</strong>
+                    </p>
+
+                    <div className="login-tipo-botoes">
+                        <Botao
+                            size="sm"
+                            className="btn-login-tipo"
+                            onClick={() => setTipoUsuario("doador")}
+                        >
+                            Doador
+                        </Botao>
+
+                        <Botao
+                            size="sm"
+                            className="btn-login-tipo"
+                            onClick={() => setTipoUsuario("instituicao")}
+                        >
+                            Instituição
+                        </Botao>
+                    </div>
+                </div>
             </div>
         </div>
     );
