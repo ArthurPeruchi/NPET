@@ -178,12 +178,7 @@
   .rodape-col:last-child {
     grid-column: auto;
   }
- 
-  .rodape-lista-sociais {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+
  
   .copyright p {
     font-size: 12px;

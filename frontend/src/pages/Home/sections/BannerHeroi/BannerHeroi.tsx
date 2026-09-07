@@ -16,7 +16,9 @@ export default function BannerHeroi() {
                         Aqui, cada contribuição é um novo começo para animais que sonham
                         com uma segunda chance. Junte-se a nós!
                     </p>
-                    <Botao variant="primario" size="lg">Comece a Doar</Botao>
+                    <Botao variant="primario" size="lg" to="/doacoes">
+                        Comece a Doar
+                    </Botao>
                     <a href="#sobre" className="hero-link">Saiba mais sobre o NPET</a>
                 </div>
             </section>

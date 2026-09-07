@@ -29,7 +29,7 @@ const IMPACTOS = [
     id: 1,
     texto: (
       <>
-        <strong>+900 animais</strong> alimentados e cuidados graças aos nossos doadores.
+        <strong>+X animais</strong> alimentados e cuidados graças aos nossos doadores.
       </>
     ),
   },
@@ -37,7 +37,7 @@ const IMPACTOS = [
     id: 2,
     texto: (
       <>
-        <strong>+120 visitas</strong> realizadas para entrega de doações em abrigos.
+        <strong>+Y visitas</strong> realizadas para entrega de doações em abrigos.
       </>
     ),
   },
@@ -45,7 +45,7 @@ const IMPACTOS = [
     id: 3,
     texto: (
       <>
-        <strong>+80% das ONGs</strong> relataram melhora no gerenciamento após receberem apoio.
+        <strong>+Z% das ONGs</strong> relataram melhora no gerenciamento após receberem apoio.
       </>
     ),
   },
