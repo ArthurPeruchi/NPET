@@ -136,6 +136,38 @@
     transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Essas 4 classes abaixo serão excluídas no Ciclo 2 */
+.login-tipo-usuario {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--body-text-color);
+    text-align: center;
+}
+
+.login-tipo-atual {
+    font-size: 14px;
+    color: var(--title-text-color);
+    text-align: center;
+}
+
+.login-tipo-atual strong {
+    color: var(--main-color);
+    font-weight: 700;
+}
+
+.login-tipo-botoes {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 2px;
+}
+
+.btn-login-tipo {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
 
 @media (max-width: 480px) {
     .login-pagina {
