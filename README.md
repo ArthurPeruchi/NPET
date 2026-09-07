@@ -1,4 +1,4 @@
-# NPET — Núcleo de Proteção e Engajamento para Tutores
+# NPET
 
 > **"Por trás de cada doação, um focinho feliz."**
 

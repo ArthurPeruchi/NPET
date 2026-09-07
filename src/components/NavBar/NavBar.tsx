@@ -4,7 +4,7 @@ import logoNpet from "../../assets/logoNpet.png";
 import "./NavBar.css";
 
 const LINKS_PRINCIPAIS = [
-    { label: "Início",     href: "/" },
+    { label: "Início",     href: "/inicio" },
     { label: "Doar",    href: "/doacoes" },
     { label: "Histórico",  href: "/historico" },
     { label: "Parcerias",  href: "/parcerias" },
@@ -14,7 +14,7 @@ const LINKS_PRINCIPAIS = [
  
 const DROPDOWN_PERFIL = [
     { label: "Ver Perfil", href: "/perfil" },
-    { label: "Sair",       href: "/sair" },
+    { label: "Sair",       href: "/" },
 ];
 
 export default function NavBar() {
@@ -71,11 +71,9 @@ export default function NavBar() {
                     }}
                 >
                     <span className="navbar-perfil-icone" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/>
-                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
-                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                    </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#1a6e54" viewBox="0 0 256 256">
+                            <path d="M234.38,210a123.36,123.36,0,0,0-60.78-53.23,76,76,0,1,0-91.2,0A123.36,123.36,0,0,0,21.62,210a12,12,0,1,0,20.77,12c18.12-31.32,50.12-50,85.61-50s67.49,18.69,85.61,50a12,12,0,0,0,20.77-12ZM76,96a52,52,0,1,1,52,52A52.06,52.06,0,0,1,76,96Z"></path>
+                        </svg>
                     </span>
                     <svg
                     className={`navbar-chevron${perfilAberto ? " navbar-chevron--aberto" : ""}`}

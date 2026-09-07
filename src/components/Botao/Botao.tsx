@@ -1,17 +1,19 @@
 import "./Botao.css";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 type BotaoProps = {
   variant?: "primario" | "secundario";
   size?: "sm" | "md" | "lg";
   disabled?: boolean;
   fullWidth?: boolean;
-  icon?: null;
+  icon?: ReactNode;
   type?: "button" | "submit" | "reset";
   onClick?: () => void;
   children?: ReactNode;
   style?: React.CSSProperties;
   className?: string;
+  to?: string;
 };
 
 export default function Botao({
@@ -24,7 +26,8 @@ export default function Botao({
   onClick, 
   children,
   style,
-  className
+  className,
+  to
 }: BotaoProps) {
   const classes = [
     "botao",
@@ -35,6 +38,21 @@ export default function Botao({
     icon ? "botao--com-icone" : "",
     className
   ].filter(Boolean).join(' ');
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={classes}
+        style={style}
+        aria-disabled={disabled}
+        onClick={disabled ? (e) => e.preventDefault() : undefined}
+      >
+        {icon && <span className="botao-icone">{icon}</span>}
+        {children}
+      </Link>
+    );
+  }
 
   return (
     <button

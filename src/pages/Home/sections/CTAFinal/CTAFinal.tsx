@@ -8,7 +8,9 @@ export default function CTAFinal() {
                 Seu gesto pode mudar a vida de quem mais precisa. Vamos participar
                 juntos dessa comunidade de amor?
             </p>
-            <Botao variant="primario" size="md" className="btn-cta-final">Comece a Doar</Botao>
+            <Botao variant="primario" size="lg" className="btn-cta-final" to="/doacoes">
+                Comece a Doar
+            </Botao>
         </section>
     )
 }
