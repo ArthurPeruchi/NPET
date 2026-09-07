@@ -6,7 +6,7 @@ import ModalInstituicao from "../../../../components/ModalInstituicao/ModalInsti
 import type { Instituicao } from "../../../../types/domain";
 
 type EtapaInstituicaoProps = {
-    onAvancar: () => void;
+    onAvancar: (inst: Instituicao) => void;
 };
 
 export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
@@ -22,8 +22,8 @@ export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
         [termoBusca]
     );
 
-    function handleClickDoar(){
-        onAvancar();
+    function handleClickDoar(inst: Instituicao) {
+        onAvancar(inst);
         return;
     }
 
@@ -43,9 +43,9 @@ export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
                 <ModalInstituicao
                     instituicao={instSelecionada}
                     onFechar={() => setInstSelecionada(null)}
-                    onDoar={() => {
+                    onDoar={(inst) => {
                         setInstSelecionada(null);
-                        onAvancar();
+                        onAvancar(inst);
                     }}
                 />
             )}

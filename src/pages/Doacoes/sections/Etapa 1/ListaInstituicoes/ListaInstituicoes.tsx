@@ -5,7 +5,7 @@ import type { Instituicao } from "../../../../../types/domain";
 type ListaInstituicoesProps = {
     instituicoes: Instituicao[];
     onVerDetalhes: (inst: Instituicao) => void;
-    onDoar: () => void;
+    onDoar: (inst: Instituicao) => void;
 };
 
 export default function ListaInstituicoes({ 
