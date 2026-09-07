@@ -1,0 +1,14 @@
+.selecao-instituicao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.selecao-instituicao h2 {
+    margin: 0;
+    text-align: center;
+}
+
+.selecao-instituicao p {
+    text-align: center;
+}

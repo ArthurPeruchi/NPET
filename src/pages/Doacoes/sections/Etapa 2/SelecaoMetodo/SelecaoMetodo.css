@@ -1,0 +1,14 @@
+.selecao-metodo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.selecao-metodo h2 {
+    margin: 0;
+    text-align: center;
+}
+
+.selecao-metodo p {
+    text-align: center;
+}

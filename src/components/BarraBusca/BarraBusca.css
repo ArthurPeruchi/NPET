@@ -1,0 +1,34 @@
+.barra-busca {
+    display: flex;
+    align-items: stretch;
+    width: 95%;
+    height: 48px;
+    border: 1px solid var(--body-text-color);
+    border-radius: 11px;
+    overflow: hidden;
+    margin: 40px 0;
+}
+
+#input-busca {
+    flex: 1;
+    padding: 0 16px;
+    border: none;
+    outline: none;
+    font-size: var(--font-size-base);
+    width: auto;
+    height: 48px;
+}
+
+#input-busca:hover, #input-busca:focus {
+    background-color: var(--main-neutral-color);
+}
+
+.icone-busca {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    min-width: 42px;
+    background-color: var(--main-color);
+    color: white;
+}
