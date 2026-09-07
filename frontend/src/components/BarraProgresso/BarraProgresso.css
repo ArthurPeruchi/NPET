@@ -1,0 +1,73 @@
+.barra-progresso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 20px 0;
+  list-style: none;
+  margin-top: 30px;
+}
+
+.passo-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.linha-conectora {
+  width: clamp(40px, 8vw, 80px);
+  height: 2px;
+  background-color: #D9D9D9;
+  flex-shrink: 0;
+  transition: background-color 250ms ease;
+}
+
+.linha-conectora--preenchida {
+  background-color: #AAAAAA;
+}
+
+.passo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 200ms ease;
+}
+
+.passo--ativo {
+  background-color: transparent;
+  border: 3px solid var(--main-color);
+}
+
+.passo--concluido {
+  background-color: #BCBCBC;
+  border: 2px solid #BCBCBC;
+}
+
+.passo--concluido:hover {
+  background-color: #A7A7A7;
+  cursor: pointer;
+}
+
+.passo--futuro {
+  background-color: transparent;
+  border: 2px solid #D9D9D9;
+}
+
+@media (max-width: 480px) {
+  .passo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .passo svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .linha-conectora {
+    width: clamp(20px, 5vw, 40px);
+  }
+}

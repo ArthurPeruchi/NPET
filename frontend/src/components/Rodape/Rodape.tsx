@@ -2,7 +2,7 @@ import "./Rodape.css"
 
 const MAPA_SITE = [
   { label: 'Início',                href: '/' },
-  { label: 'Nova Doação',           href: '/doar' },
+  { label: 'Nova Doação',           href: '/doacoes' },
   { label: 'Histórico de Doações',  href: '/historico' },
   { label: 'Instituições Parceiras',href: '/parcerias' },
   { label: 'Nossas Avaliações',     href: '/avaliacoes' },

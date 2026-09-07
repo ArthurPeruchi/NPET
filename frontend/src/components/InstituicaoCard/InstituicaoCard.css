@@ -1,3 +1,10 @@
+.card-instituicao-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+}
+
 .card-instituicao {
     background: #F8F8F8;
     border: 1px solid #ccc;
@@ -8,6 +15,8 @@
     gap: 12px;
     transition: box-shadow 160ms ease, border-color 160ms ease;
     overflow: hidden;
+    width: 85%;
+    align-content: flex-end;
 }
 
 .card-instituicao:hover {
@@ -17,6 +26,10 @@
 
 .btn-borda-preta {
     border: 2px solid var(--title-text-color)
+}
+
+.btn-borda-preta:hover {
+    border-color: #8b8282;
 }
 
 .card-instituicao-wrapper-logo {
