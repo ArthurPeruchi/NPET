@@ -16,7 +16,22 @@
     transition: box-shadow 160ms ease, border-color 160ms ease;
     overflow: hidden;
     width: 85%;
-    align-content: flex-end;
+}
+
+.card-instituicao-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    flex: 1;
+}
+
+.card-instituicao-acoes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
 }
 
 .card-instituicao:hover {
@@ -47,8 +62,8 @@
 }
 
 .card-instituicao-logo-placeholder {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     background: var(--main-color);
 }
@@ -67,6 +82,7 @@
 }
 
 .card-instituicao-local {
+    margin-top: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -83,44 +99,40 @@
 
 @media (max-width: 768px) {
   .card-instituicao {
-    flex-direction: row;
-    align-items: center;
-    gap: 16px;
+    justify-content: flex-end;
+    gap: 12px;
     padding: 14px;
+    width: 85%;
   }
- 
+
   .card-instituicao-wrapper-logo {
-    height: 64px;
-    width: 64px;
-    flex-shrink: 0;
+    width: 82px;
+    height: 82px;
     padding: 4px;
   }
- 
+
   .card-instituicao-logo-placeholder {
-    width: 56px;
-    height: 56px;
+    width: 82px;
+    height: 82px;
   }
- 
+
   .card-instituicao-body {
-    flex: 1;
+    width: 100%;
+    align-items: center;
     min-width: 0;
   }
- 
+
   .card-instituicao-nome {
-    text-align: left;
+    text-align: center;
   }
- 
+
   .card-instituicao-local {
-    justify-content: flex-start;
+    justify-content: center;
   }
- 
-  .card-instituicao {
-    flex-wrap: wrap;
-  }
- 
+
   .card-instituicao > .botao,
   .card-instituicao > button {
     width: 100%;
-    flex-basis: 100%;
+    flex-basis: auto;
   }
 }
