@@ -12,3 +12,43 @@
 .selecao-metodo p {
     text-align: center;
 }
+
+.botoes {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 40px;
+    width: 35%;
+}
+
+.btn-doar-dinheiro {
+    width: 100%;
+    margin-top: 40px;
+}
+
+.btn-doar-produto {
+    width: 100%;
+    margin-bottom: 60px;
+}
+
+@media (max-width: 1024px) {
+    .botoes {
+        width: 45%;
+    }
+
+    .selecao-metodo {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .botoes {
+        width: 55%;
+    }
+}
+
+@media (max-width: 480px) {
+    .botoes {
+        width: 70%;
+    }
+}

@@ -6,6 +6,7 @@ import Rodape from "../../components/Rodape/Rodape";
 import type { Instituicao, TipoDoacao, DadosDoacao } from "../../types/domain";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useScrollToTop } from "../../hooks/useScrollToTop";
 
 export default function Doacoes() {
     const location = useLocation();
@@ -17,17 +18,22 @@ export default function Doacoes() {
         idInstituicao: instPreSelecionada?.id ?? null,
     });
 
+    useScrollToTop(passoAtual);
+
     function salvarInstituicao(inst: Instituicao) {
         setDadosDoacao(d => ({ ...d, idInstituicao: inst.id }));
         setPassoAtual(2);
     }
 
-    /*
+    
     function salvarMetodo(tipo: TipoDoacao) {
         setDadosDoacao(d => ({ ...d, tipoDoacao: tipo }));
         setPassoAtual(3);
+
+        console.log("Dados da doação:", { ...dadosDoacao, tipoDoacao: tipo });
     }
 
+    /*
     function voltar() {
         setPassoAtual(p => (p > 1 ? (p - 1) as 1 | 2 | 3 | 4 : 1));
     }
@@ -45,7 +51,9 @@ export default function Doacoes() {
             )}
 
             {passoAtual === 2 && (
-                <EtapaMetodo />
+                <EtapaMetodo
+                    onAvancar={salvarMetodo} 
+                />
             )}
 
             {/*
