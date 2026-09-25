@@ -32,3 +32,47 @@
     background-color: var(--main-color);
     color: white;
 }
+
+.mobile-filtro {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    min-width: 42px;
+    background-color: var(--main-color);
+    color: white;
+}
+
+.mobile-filtro:hover {
+    background-color: var(--hover-main-color);
+}
+
+.btn-adicionar-filtro {
+    background-color: var(--main-color);
+    color: white;
+    border-radius: 0 0.5rem 0.5rem 0;
+    height: 100%;
+    padding: 0 40px;
+}
+
+@media (max-width: 768px) {
+    .barra-busca {
+        height: 40px;
+    }
+
+    #input-busca {
+        font-size: var(--font-size-small);
+        height: 40px;
+        padding: 0 0 0 12px;
+        width: 100%;
+    }
+
+    .icone-busca, .mobile-filtro {
+        width: 40px;
+        min-width: 40px;
+    }
+
+    .btn-adicionar-filtro {
+        padding: 0 20px;
+    }
+}
