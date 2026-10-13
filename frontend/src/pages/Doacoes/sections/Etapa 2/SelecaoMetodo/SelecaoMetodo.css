@@ -22,12 +22,14 @@
 }
 
 .btn-doar-dinheiro {
-    width: 100%;
+    width: 95%;
+    align-self: center;
     margin-top: 40px;
 }
 
 .btn-doar-produto {
-    width: 100%;
+    width: 95%;
+    align-self: center;
     margin-bottom: 60px;
 }
 
@@ -44,11 +46,25 @@
 @media (max-width: 768px) {
     .botoes {
         width: 55%;
+        gap: 30px;
     }
 }
 
 @media (max-width: 480px) {
     .botoes {
-        width: 70%;
+        width: 90%;
+        gap: 20px;
+    }
+
+    .selecao-metodo {
+        padding: 0 10px;
+    }
+
+    .btn-doar-dinheiro {
+        padding: 10px;
+    }
+
+    .btn-doar-produto {
+        padding: 10px;
     }
 }
