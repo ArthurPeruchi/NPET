@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logoNpet from "../../assets/logoNpet.png";
 import Botao from "../../components/Botao/Botao";
+import CampoTexto from "../../components/CampoTexto/CampoTexto";
 import "./Login.css";
 
 export default function Login() {
@@ -12,22 +13,34 @@ export default function Login() {
     const [email, setEmail]     = useState("");
     const [senha, setSenha]     = useState("");
     const [erro,  setErro]      = useState<string | null>(null);
+    const [erroEmail, setErroEmail] = useState("");
+    const [erroSenha, setErroSenha] = useState("");
 
     const [tipoUsuario, setTipoUsuario] = useState<"instituicao" | "doador">("doador");
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErro(null);
+        setErroEmail("");
+        setErroSenha("");
 
-        if (!email || !senha) {
-            setErro("Preencha todos os campos.");
-            return;
+        let emailInvalido = "";
+        let senhaInvalida = "";
+
+        if (!email.trim()) {
+            emailInvalido = "Preencha o e-mail.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+            emailInvalido = "Digite um e-mail válido.";
         }
 
-        const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!senha) {
+            senhaInvalida = "Preencha a senha.";
+        }
 
-        if (!emailValido) {
-            setErro("Digite um e-mail válido.");
+        setErroEmail(emailInvalido);
+        setErroSenha(senhaInvalida);
+
+        if (emailInvalido || senhaInvalida) {
             return;
         }
 
@@ -51,13 +64,23 @@ export default function Login() {
                 },
                 body: JSON.stringify({ 
                     email, 
-                    password: senha })
+                    password: senha 
+                })
             });
 
             const data = await response.json();
 
-            if (!response.ok) {
-                setErro(data.detail || "Erro ao fazer login.");
+           if (!response.ok) {
+                const mensagem = data.detail || "Erro ao fazer login.";
+
+                if (mensagem.toLowerCase().includes("e-mail ou senha inválidos")) {
+                    setErroEmail(" ");
+                    setErroSenha(" ");
+                    setErro("E-mail ou senha inválidos.");
+                } else {
+                    setErro(mensagem);
+                }
+
                 return;
             }
 
@@ -98,40 +121,29 @@ export default function Login() {
                     onSubmit={handleSubmit}
                     noValidate
                     aria-label="Formulário de login"
-                    >
-                    {erro && (
-                        <p className="login-erro" role="alert">{erro}</p>
-                    )}
-                    <fieldset className="login-campo">
-                        <legend className="login-campo-label">E-mail de Usuário</legend>
-                        <input
-                            className="login-input"
-                            type="email"
-                            id="email"
-                            placeholder="usuario@dominio.com"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            autoComplete="email"
-                            required
-                            aria-required="true"
-                        />
-                    </fieldset>
+                >
+                    {erro && <p className="login-erro">{erro}</p>}
+                 
+                    <CampoTexto
+                        label="E-mail de Usuário"
+                        variante="email"
+                        value={email}
+                        onChange={setEmail}
+                        autoComplete="email"
+                        required
+                        erro={erroEmail}
+                    />
 
-                    <fieldset className="login-campo">
-                        <legend className="login-campo-label">Senha</legend>
-                        <input
-                            className="login-input"
-                            id="senha"
-                            type="password"
-                            placeholder="••••••••"
-                            value={senha}
-                            onChange={e => setSenha(e.target.value)}
-                            autoComplete="current-password"
-                            required
-                            aria-required="true"
-                        />
-                    </fieldset>
-                    
+                    <CampoTexto
+                        label="Senha"
+                        variante="senha"
+                        value={senha}
+                        onChange={setSenha}
+                        autoComplete="current-password"
+                        required
+                        erro={erroSenha}
+                    />
+
                     <button
                         type="button"
                         className="login-link"
