@@ -8,6 +8,9 @@ type VarianteCampo =
     | "valor"           // R$ 0,00
     | "horario"         // HH:MM
     | "data"            // DD/MM/AAAA
+    | "numeroCartao"    // 0000 0000 0000 0000
+    | "validade"        // MM/AA
+    | "cvv"             // 000
     | "exibicao";
 
 type CampoTextoProps = {
@@ -51,6 +54,24 @@ function formatarData(raw: string): string {
     if (digits.length <= 2) return digits;
     if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
     return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function formatarNumeroCartao(raw: string): string {
+    const digits = raw.replace(/\D/g, "").slice(0, 16);
+
+    return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
+function formatarValidadeCartao(raw: string): string {
+    const digits = raw.replace(/\D/g, "").slice(0, 4);
+
+    if (digits.length <= 2) return digits;
+
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
+function formatarCVV(raw: string): string {
+    return raw.replace(/\D/g, "").slice(0, 3);
 }
 
 function IconeOlho({ visivel }: { visivel: boolean }) {
@@ -109,6 +130,21 @@ export default function CampoTexto({
 
         if (variante === "data"){ 
             onChange(formatarData(raw));     
+            return; 
+        }
+
+        if (variante === "numeroCartao"){ 
+            onChange(formatarNumeroCartao(raw));     
+            return; 
+        }
+
+        if (variante === "validade"){ 
+            onChange(formatarValidadeCartao(raw));     
+            return; 
+        }
+
+        if (variante === "cvv"){ 
+            onChange(formatarCVV(raw));     
             return; 
         }
 
