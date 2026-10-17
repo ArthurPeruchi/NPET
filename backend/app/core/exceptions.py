@@ -1,10 +1,3 @@
-"""
-Exceções de domínio da aplicação.
-
-Os Services lançam estas exceções; um handler global em `app.main` as converte em respostas HTTP JSON padronizadas. Assim as camadas de negócio não precisam conhecer detalhes de HTTP.
-"""
-
-
 class AppError(Exception):
     """Erro base da aplicação."""
 

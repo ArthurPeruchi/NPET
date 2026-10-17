@@ -1,9 +1,3 @@
-"""
-Rotas REST de Autenticação (camada Controller)
-
-Só cuida de HTTP: recebe o DTO já validado pelo schema, chama o Service e devolve a resposta.
-"""
-
 from fastapi import APIRouter, Depends
 
 from app.modules.auth.usuarios.repository import AuthRepository, get_auth_repository

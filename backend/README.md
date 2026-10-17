@@ -98,7 +98,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-**4. Rodar a aplicação com hot-reload**
+**4. Rodar a aplicação**
 
 ```bash
 uvicorn app.main:app --reload

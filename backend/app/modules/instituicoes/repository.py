@@ -1,9 +1,3 @@
-"""
-Repositório de Instituições (camada Repository)
-
-Único ponto que acessa o `fake_db.py`. Os métodos são assíncronos para que a troca por um ORM (ex.: SQLAlchemy/SQLModel com PostgreSQL) não altere a assinatura usada pelo Service.
-"""
-
 from copy import deepcopy
 from typing import Any
 

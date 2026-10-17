@@ -1,10 +1,3 @@
-"""
-Ponto de entrada da aplicação FastAPI.
-
-Execute com:  uvicorn app.main:app --reload
-Documentação: http://localhost:8000/docs
-"""
-
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -42,7 +35,7 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix=settings.API_PREFIX)
 
-    # Arquivos estáticos (ex.: logos das instituições em /static/instituicoes/).
+    # Arquivos mockados (p. ex.: logos das instituições em /static/instituicoes/).
     app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
     @app.get("/", tags=["root"], summary="Informações básicas da API")

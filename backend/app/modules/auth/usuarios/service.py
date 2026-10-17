@@ -1,9 +1,3 @@
-"""
-Regras de negócio de Autenticação (camada Service)
-
-Não conhece HTTP nem sabe onde os dados estão guardados: pede ao Repository a credencial e decide se a autenticação é válida.
-"""
-
 from app.core.exceptions import UnauthorizedError
 from app.modules.auth.usuarios.repository import AuthRepository
 

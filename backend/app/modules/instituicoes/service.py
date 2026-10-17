@@ -1,9 +1,3 @@
-"""
-Regras de negócio de Instituições (camada Service)
-
-Não conhece HTTP nem sabe onde os dados estão guardados: consulta somente o Repository.
-"""
-
 from typing import Any
 
 from app.core.exceptions import NotFoundError

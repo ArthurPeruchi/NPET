@@ -1,9 +1,3 @@
-"""
-Configuração global da aplicação.
-
-Carrega as variáveis de ambiente (arquivo `.env`) usando Pydantic Settings. Use sempre `from app.core.config import settings` para ler configurações.
-"""
-
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict

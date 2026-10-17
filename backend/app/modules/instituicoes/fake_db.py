@@ -1,10 +1,3 @@
-"""
-"Tabela" temporária de Instituições.
-
-Acessada exclusivamente por `repository.py`. Será substituída por uma tabela PostgreSQL via ORM.
-Os logos são servidos pelo backend em `/static/instituicoes/`.
-"""
-
 from typing import Any
 
 FAKE_INSTITUICOES_DB: list[dict[str, Any]] = [

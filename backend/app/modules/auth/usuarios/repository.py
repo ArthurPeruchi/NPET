@@ -1,9 +1,3 @@
-"""
-Repositório de Autenticação (camada Repository)
-
-Consulta a "tabela" de credenciais. Hoje, a lista hardcoded em `fake_db.py`. É o único ponto do módulo que sabe onde/como os dados estão guardados.
-"""
-
 from app.modules.auth.usuarios.fake_db import FAKE_CREDENTIALS_DB
 
 

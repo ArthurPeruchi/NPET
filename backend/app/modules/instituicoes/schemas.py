@@ -1,9 +1,3 @@
-"""
-DTOs de Instituições.
-
-Os campos são snake_case no Python e serializados em camelCase no JSON, no formato esperado pelo frontend (`types/domain.ts`).
-"""
-
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 

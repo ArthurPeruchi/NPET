@@ -1,9 +1,3 @@
-"""
-Rotas REST de Instituições (camada Controller)
-
-Só cuida de HTTP: chama o Service e devolve os DTOs. Nunca acessa o `fake_db.py` diretamente.
-"""
-
 from fastapi import APIRouter, Depends
 
 from app.modules.instituicoes.repository import (
