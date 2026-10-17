@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import SelecaoInstituicao from "./SelecaoInstituicao/SelecaoInstituicao";
 import ListaInstituicoes from "./ListaInstituicoes/ListaInstituicoes";
-import { INSTITUICOES } from "../../../../mocks/mockInstituicoes";
+import useInstituicoes from "../../../../hooks/useInstituicoes";
 import ModalInstituicao from "../../../../components/ModalInstituicao/ModalInstituicao";
 import type { Instituicao } from "../../../../types/domain";
 
@@ -14,12 +14,14 @@ export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
 
     const [instSelecionada, setInstSelecionada] = useState<Instituicao | null>(null);
 
+    const { instituicoes, carregando, erro } = useInstituicoes();
+
     const instituicoesFiltradas = useMemo(() =>
-        INSTITUICOES.filter(inst =>
+        instituicoes.filter(inst =>
             inst.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
             inst.cidade.toLowerCase().includes(termoBusca.toLowerCase())
         ),
-        [termoBusca]
+        [instituicoes, termoBusca]
     );
 
     function handleClickDoar(inst: Instituicao) {
@@ -33,11 +35,15 @@ export default function EtapaInstituicao({ onAvancar }: EtapaInstituicaoProps) {
                 termoBusca={termoBusca}
                 setTermoBusca={setTermoBusca}
             />
-            <ListaInstituicoes
-                instituicoes={instituicoesFiltradas}
-                onVerDetalhes={setInstSelecionada}
-                onDoar={handleClickDoar}
-            />
+            {carregando && <p role="status">Carregando instituições...</p>}
+            {erro && <p role="alert">{erro}</p>}
+            {!carregando && !erro && (
+                <ListaInstituicoes
+                    instituicoes={instituicoesFiltradas}
+                    onVerDetalhes={setInstSelecionada}
+                    onDoar={handleClickDoar}
+                />
+            )}
 
             {instSelecionada && (
                 <ModalInstituicao
