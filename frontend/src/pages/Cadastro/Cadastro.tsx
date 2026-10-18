@@ -111,7 +111,7 @@ export default function Cadastro() {
 
         setCarregando(true);
         try {
-            const response = await fetch(`${api_url}/auth/register`, {
+            const response = await fetch(`${api_url}/users/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -146,15 +146,17 @@ export default function Cadastro() {
                         <img src={logoNpet} alt="Logo NPET" className="cadastro-logo" />
                         <span className="cadastro-nome">NPET</span>
                     </div>
-                    <hr className="cadastro-divisor" />
+                    <hr className="cadastro-divisor-2" />
                     <div className="cadastro-sucesso">
-                        <span className="cadastro-sucesso-icone" aria-hidden="true">🐾</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="sucesso-icone" width="64" height="64" fill="#1a6e54" viewBox="0 0 256 256">
+                            <path d="M253.66,133.66l-32,32a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,11.32-11.32L216,148.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM144,157.68a68,68,0,1,0-71.9,0c-20.65,6.76-39.23,19.39-54.17,37.17A8,8,0,0,0,24,208H192a8,8,0,0,0,6.13-13.15C183.18,177.07,164.6,164.44,144,157.68Z"></path>
+                        </svg>
                         <h2>Conta criada com sucesso!</h2>
-                        <p>Bem-vindo ao NPET. Agora você pode fazer a diferença na vida de milhares de animais.</p>
+                        <p>Bem-vindo ao NPET! Agora você pode fazer a diferença na vida de milhares de animais.</p>
                         <Botao
                             variant="primario"
-                            size="lg"
-                            fullWidth
+                            size="md"
+                            className="botao-login"
                             onClick={() => navigate("/login")}
                         >
                             Fazer login
@@ -270,11 +272,11 @@ export default function Cadastro() {
                 </form>
 
                 <p className="cadastro-login">
-                    Já tem uma conta?{" "}
+                    Já tem uma conta?
                     <button
                         type="button"
                         className="cadastro-link"
-                        onClick={() => navigate("/")}
+                        onClick={() => navigate("/login")}
                     >
                         Fazer login
                     </button>
