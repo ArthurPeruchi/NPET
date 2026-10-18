@@ -1,9 +1,3 @@
-"""
-Configuração global da aplicação.
-
-Carrega as variáveis de ambiente (arquivo `.env`) usando Pydantic Settings. Use sempre `from app.core.config import settings` para ler configurações.
-"""
-
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,6 +15,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
     API_PREFIX: str = "/api/v1"
     DEBUG: bool = True
+    DATABASE_URL: str
+    JWT_SECRET_KEY: str
+    JWT_EXPIRE_MINUTES: int = 30
 
     @property
     def is_production(self) -> bool:

@@ -3,7 +3,7 @@ import Botao from "../../../../components/Botao/Botao";
 import InstituicaoCard from "../../../../components/InstituicaoCard/InstituicaoCard";
 import ModalInstituicao from "../../../../components/ModalInstituicao/ModalInstituicao";
 import "./Instituicoes.css";
-import { INSTITUICOES } from "../../../../mocks/mockInstituicoes";
+import useInstituicoes from "../../../../hooks/useInstituicoes";
 import type { Instituicao } from "../../../../types/domain";
 import useIsMobile from "../../../../hooks/useIsMobile";
 import { useNavigate } from "react-router-dom";
@@ -14,16 +14,17 @@ export default function Instituicoes() {
   const CARDS_VISIVEIS = isMobile ? 1 : 3;
 
   const navigate = useNavigate();
+  const { instituicoes, carregando, erro } = useInstituicoes();
 
   const [instSelecionada, setInstSelecionada] = useState<Instituicao | null>(null);
 
   const podePrev = inicio > 0;
-  const podeNext = inicio + CARDS_VISIVEIS < INSTITUICOES.length;
+  const podeNext = inicio + CARDS_VISIVEIS < instituicoes.length;
 
   const prev = () => { if (podePrev) setInicio(i => i - 1); };
   const next = () => { if (podeNext) setInicio(i => i + 1); };
 
-  const visiveis = INSTITUICOES.slice(inicio, inicio + CARDS_VISIVEIS);
+  const visiveis = instituicoes.slice(inicio, inicio + CARDS_VISIVEIS);
 
   return (
     <section className="instituicoes">
@@ -43,6 +44,8 @@ export default function Instituicoes() {
         </button>
 
         <div className="instituicoes-cards" role="list">
+          {carregando && <p role="status">Carregando instituições...</p>}
+          {erro && <p role="alert">{erro}</p>}
           {visiveis.map(inst => (
             <InstituicaoCard
               key={inst.id}

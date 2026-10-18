@@ -1,17 +1,21 @@
-from app.modules.auth.instituicoes.fake_db import FAKE_INSTITUTION_CREDENTIALS_DB
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.database.models import Instituicao, Usuario
 
 
 class InstitutionAuthRepository:
-    # [Auth Instituição, camada: Repository]
-    def find_credential(self, email: str) -> dict[str, str] | None:
-        return next(
-            (c for c in FAKE_INSTITUTION_CREDENTIALS_DB if c["email"] == email), None
-        )
+    def __init__(self, db: Session) -> None:
+        self._db = db
 
+    def email_exists(self, email: str) -> bool:
+        return self._db.scalar(select(Usuario.id_usuario).where(Usuario.email == email)) is not None
 
-# Instância única usada pela injeção de dependência do FastAPI.
-_repository = InstitutionAuthRepository()
+    def cnpj_exists(self, cnpj: str) -> bool:
+        return self._db.scalar(select(Instituicao.id_instituicao).where(Instituicao.cnpj == cnpj)) is not None
 
-
-def get_institution_auth_repository() -> InstitutionAuthRepository:
-    return _repository
+    def create(self, usuario: Usuario) -> Usuario:
+        self._db.add(usuario)
+        self._db.commit()
+        self._db.refresh(usuario)
+        return usuario
