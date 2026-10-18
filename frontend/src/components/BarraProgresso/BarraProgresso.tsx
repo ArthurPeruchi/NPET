@@ -3,7 +3,7 @@ import "./BarraProgresso.css";
 type Passo = {
   id: number;
   label: string;
-  icon: React.ReactNode;
+  icon: (cor: string) => React.ReactNode;
 };
 
 type BarraProgressoProps = {
@@ -56,7 +56,7 @@ const PASSOS: Passo[] = [
     label: "Confirmação",
     icon: (cor: string) => <IconeConfirmacao cor={cor} />,
   },
-] as any;
+];
 
 export default function BarraProgresso({ 
   passoAtual, 
@@ -90,7 +90,7 @@ export default function BarraProgresso({
         };
 
         return (
-          <div key={passo.id} className="passo-wrap">
+          <div key={passo.id} className={`passo-wrap ${ativo ? "passo-wrap--mobile-atual" : ""}`}>
             {index > 0 && (
               <div
                 className={`linha-conectora ${concluido || ativo ? "linha-conectora--preenchida" : ""}`}
@@ -105,7 +105,17 @@ export default function BarraProgresso({
               aria-label={`${ativo ? "Atual: " : concluido ? "Concluído: " : ""}Passo ${passo.id}, ${passo.label}`}
               onClick={handlePassoClick}
             >
-              {(passo as any).icon(corIcone)}
+              {(passo).icon(corIcone)}
+            </div>
+
+            <div className="passo-info">
+              <span className="passo-label">
+                {passo.label}
+              </span>
+
+              <span className="passo-contador">
+                Etapa {passo.id} de {PASSOS.length}
+              </span>
             </div>
           </div>
         );

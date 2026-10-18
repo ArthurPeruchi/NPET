@@ -12,3 +12,59 @@
 .selecao-metodo p {
     text-align: center;
 }
+
+.botoes {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 40px;
+    width: 35%;
+}
+
+.btn-doar-dinheiro {
+    width: 95%;
+    align-self: center;
+    margin-top: 40px;
+}
+
+.btn-doar-produto {
+    width: 95%;
+    align-self: center;
+    margin-bottom: 60px;
+}
+
+@media (max-width: 1024px) {
+    .botoes {
+        width: 45%;
+    }
+
+    .selecao-metodo {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .botoes {
+        width: 55%;
+        gap: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .botoes {
+        width: 90%;
+        gap: 20px;
+    }
+
+    .selecao-metodo {
+        padding: 0 10px;
+    }
+
+    .btn-doar-dinheiro {
+        padding: 10px;
+    }
+
+    .btn-doar-produto {
+        padding: 10px;
+    }
+}

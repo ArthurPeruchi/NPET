@@ -12,3 +12,9 @@
 .selecao-instituicao p {
     text-align: center;
 }
+
+@media (max-width: 1024px) {
+    .selecao-instituicao h2, .selecao-instituicao p {
+        padding: 0 20px;
+    } 
+}

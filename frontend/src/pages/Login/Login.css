@@ -51,46 +51,12 @@
     padding: 32px 40px 8px;
 }
 
-.login-campo {
-    border: 1px solid var(--secondary-neutral-color);
-    border-radius: 8px; 
-    margin: 0;
-    transition: border-color 150ms ease;
-    padding: 8px 12px 14px;
-}
-
-.login-campo:focus-within {
-    border-color: var(--main-color);
-}
-
-.login-campo-label {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--title-text-color);
-    padding: 0 6px;
-}
-
-.login-input {
-    display: block;
-    width: 100%;
-    border: none;
-    outline: none;
-    font-size: 16px;
-    font-family: inherit;
-    color: var(--body-text-color);
-    background: transparent;
-}
-
-.login-input::placeholder {
-    color: var(--secondary-neutral-color, #AAAAAA);
-}
-
 .login-link {
     background: none;
     border: none;
     padding: 0;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     font-family: inherit;
     color: var(--main-color);
     text-decoration: underline;
@@ -112,7 +78,7 @@
 
 .login-erro {
     font-size: 13px;
-    color: #B91C1C;
+    color: var(--error-color);
     margin: -4px 0 0;
 }
 
@@ -125,15 +91,6 @@
 
 .btn-login {
     margin-top: 20px;
-}
-
-.login-input:-webkit-autofill,
-.login-input:-webkit-autofill:hover,
-.login-input:-webkit-autofill:focus,
-.login-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px transparent inset;
-    -webkit-text-fill-color: #000;
-    transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Essas 4 classes abaixo serão excluídas no Ciclo 2 */

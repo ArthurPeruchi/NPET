@@ -9,8 +9,10 @@
   --title-text-color: #2F2F2F;
   --body-text-color: #454545;
   --secondary-body-text-color: #777777;
+  --error-color: #B91C1C;
 
   /* Fontes :D */
+  --font-size-label: 16px;
   --font-size-base: 20px;
   --font-size-subtitulo: 32px;
   --font-size-titulo: 40px;
