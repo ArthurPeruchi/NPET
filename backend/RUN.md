@@ -31,6 +31,14 @@ pip install -r requirements.txt
 ```bash
 copy .env.example .env
 ```
+Ajuste `DATABASE_URL` no `.env` para apontar para o seu PostgreSQL (como subir um: [STARTUP.md](STARTUP.md#2-subindo-o-postgresql)).
+
+## Criação/atualização das tabelas
+```bash
+python -m alembic upgrade head
+```
+
+> A migration inicial já está versionada em `migrations/versions/`. Só rode `alembic revision --autogenerate -m "..."` depois de alterar `app/database/models.py`.
 
 ## 4. Rodar a aplicação com hot-reload:
 
@@ -50,22 +58,32 @@ A API sobe em `http://localhost:8000`.
 
 ### Como usuário:
 
-Credencial hardcoded (ver [app/modules/auth/usuarios/fake_db.py](app/modules/auth/usuarios/fake_db.py)):
+Cadastre o usuário no banco e faça login com ele:
 
 ```bash
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"nome\": \"Doador\", \"email\": \"doador@email.com.br\", \"senha\": \"senha1234\", \"tipo_usuario\": \"doador\"}"
+
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"doador@email.com.br\", \"password\": \"senha123\"}"
+  -d "{\"email\": \"doador@email.com.br\", \"senha\": \"senha1234\"}"
 ```
+
+Credencial certa → `200` com `{"message": "Autenticação realizada com sucesso."}`; errada → `401`.
 
 ### Como instituição:
 
-Credencial hardcoded (ver [app/modules/auth/instituicoes/fake_db.py](app/modules/auth/instituicoes/fake_db.py)):
+Cadastre a instituição e faça login com ela:
 
 ```bash
+curl -X POST http://localhost:8000/api/v1/institutions/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"nome\": \"ASPAAN\", \"email\": \"instituicao@email.com.br\", \"senha\": \"senha1234\", \"tipo_usuario\": \"instituicao\"}"
+
 curl -X POST http://localhost:8000/api/v1/institutions/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"instituicao@email.com.br\", \"password\": \"senha123\"}"
+  -d "{\"email\": \"instituicao@email.com.br\", \"senha\": \"senha1234\"}"
 ```
 
-Nos dois casos: credencial certa → `200` com `{"success": true, "message": "Autenticação realizada com sucesso."}`; credencial errada → `401`.
+Credencial certa → `200` com `{"message": "Autenticação realizada com sucesso."}`; errada → `401`.
