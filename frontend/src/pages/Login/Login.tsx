@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/useAuth";
 import logoNpet from "../../assets/logoNpet.png";
 import Botao from "../../components/Botao/Botao";
 import CampoTexto from "../../components/CampoTexto/CampoTexto";
@@ -16,7 +17,7 @@ export default function Login() {
     const [erroEmail, setErroEmail] = useState("");
     const [erroSenha, setErroSenha] = useState("");
 
-    const [tipoUsuario, setTipoUsuario] = useState<"instituicao" | "doador">("doador");
+    const { login } = useAuth();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -69,12 +70,7 @@ export default function Login() {
                 return;
             }
 
-            localStorage.setItem("token", data.access_token);
-            localStorage.setItem("role", data.tipo_usuario);
-
-            setTimeout(() => {
-                navigate("/inicio");
-            }, 100);
+            login(data.access_token, data.tipo_usuario);
 
         }catch (err) {
             console.error("Erro ao fazer login:", err);
@@ -155,37 +151,6 @@ export default function Login() {
                         Criar nova conta
                     </button>
                 </p>
-
-                <hr className="login-divisor" />
-                <div className="login-tipo-usuario">
-                    <p className="login-tipo-usuario">
-                        Mude o tipo de usuário nos botões abaixo! Está assim por enquanto
-                        porque o backend ainda não retorna a role do usuário; será ajustado 
-                        no Ciclo 2.
-                    </p>
-
-                    <p className="login-tipo-atual">
-                        Tipo de usuário atual: <strong>{tipoUsuario}</strong>
-                    </p>
-
-                    <div className="login-tipo-botoes">
-                        <Botao
-                            size="sm"
-                            className="btn-login-tipo"
-                            onClick={() => setTipoUsuario("doador")}
-                        >
-                            Doador
-                        </Botao>
-
-                        <Botao
-                            size="sm"
-                            className="btn-login-tipo"
-                            onClick={() => setTipoUsuario("instituicao")}
-                        >
-                            Instituição
-                        </Botao>
-                    </div>
-                </div>
             </div>
         </div>
     );

@@ -1,4 +1,5 @@
 import type { Instituicao } from "../types/domain";
+import { get_token, notify_unauthorized } from "../auth/auth_storage";
 
 const api_url = import.meta.env.VITE_API_URL;
 
@@ -8,16 +9,15 @@ function resolverLogo(inst: Instituicao): Instituicao {
 }
 
 async function requisitar<T>(endpoint: string): Promise<T> {
-    const token = localStorage.getItem("token");
+    const token = get_token();
     const response = await fetch(`${api_url}/${endpoint}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
-    // Token ausente ou expirado: limpa a sessão e volta para o login (sem recarregar se já estiver nele).
+    // Token ausente ou expirado: avisa o AuthProvider, que limpa a sessão.
+    // O redirecionamento para /login é feito pela RotaProtegida (sem recarregar a página).
     if (response.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        if (window.location.pathname !== "/") window.location.href = "/";
+        notify_unauthorized();
         throw new Error("Sessão expirada. Faça login novamente.");
     }
 
