@@ -1,0 +1,14 @@
+.detalhes-produto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.detalhes-produto h2 {
+    margin: 0;
+    text-align: center;
+}
+
+.detalhes-produto p {
+    text-align: center;
+}
