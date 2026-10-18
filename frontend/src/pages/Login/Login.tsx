@@ -32,19 +32,7 @@ export default function Login() {
         }
 
         try {
-
-            /* 
-            No ciclo 2 do NPET, não precisará de diferentes endpoints para login de
-            diferentes tipos de usuário, mas por enquanto, precisa ser assim porque o
-            back ainda não retorna o tipo de usuário.
-            */
-
-            const endpoint = 
-                tipoUsuario === "instituicao" 
-                    ? "institutions/auth/login" 
-                    : "users/auth/login";
-
-            const response = await fetch(`${api_url}/${endpoint}`, {
+            const response = await fetch(`${api_url}/auth/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -60,7 +48,7 @@ export default function Login() {
             }
 
             localStorage.setItem("token", data.access_token);
-            localStorage.setItem("role", tipoUsuario);
+            localStorage.setItem("role", data.tipo_usuario);
 
             setTimeout(() => {
                 navigate("/inicio");

@@ -17,13 +17,16 @@ collect_ignore = ["test_conn.py"]
 
 
 @pytest.fixture
-def client():
+def session_factory():
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
-    TestingSession = sessionmaker(bind=engine, autoflush=False)
+    return sessionmaker(bind=engine, autoflush=False)
 
+
+@pytest.fixture
+def client(session_factory):
     def override_get_db():
-        with TestingSession() as db:
+        with session_factory() as db:
             yield db
 
     app.dependency_overrides[get_db] = override_get_db

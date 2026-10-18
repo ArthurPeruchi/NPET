@@ -2,7 +2,7 @@
 
 Este documento explica, de forma simples, o que existe hoje no backend do NPET, por quê, e como um novo desenvolvedor sobe o ambiente do zero.
 
-> **Estado atual:** os dados ficam em **PostgreSQL**, acessado pela ORM do **SQLAlchemy 2.0**; o schema do banco é versionado com **Alembic**. Entregues: cadastro/login de usuários (senha com hash bcrypt) com token JWT; as rotas de `/instituicoes` exigem o token. O cadastro e o login de instituições (`/institutions/auth/register` e `/login`) reutilizam a tabela `usuarios`, filtrando `tipo_usuario = instituicao`. A listagem de instituições (`/instituicoes`) ainda usa dados mockados (`modules/instituicoes/fake_db.py`), mas dessa vez, é requisitado no backend.
+> **Estado atual:** os dados ficam em **PostgreSQL**, acessado pela ORM do **SQLAlchemy 2.0**; o schema do banco é versionado com **Alembic**. Entregues: cadastro/login de usuários (senha com hash bcrypt) com token JWT; as rotas de `/instituicoes` exigem o token. O cadastro de instituições (`/institutions/auth/register`) cria, na mesma transação, o registro em `usuarios` (com `tipo_usuario = instituicao`) e o perfil em `instituicoes` (nome, cidade, UF e CNPJ opcional). A listagem de instituições (`/instituicoes`) ainda usa dados mockados (`modules/instituicoes/fake_db.py`), mas dessa vez, é requisitado no backend.
 
 ---
 
@@ -13,9 +13,9 @@ HTTP → Router (Controller) → Service (regra) → Repository (dados) → Post
        router.py             service.py        repository.py        (Session do SQLAlchemy)
 ```
 
-Exemplo com o módulo de cadastro/login de instituições ([app/modules/auth/instituicoes/](app/modules/auth/instituicoes/)), que espelha o de usuários ([app/modules/auth/usuarios/](app/modules/auth/usuarios/)):
+Exemplo com o módulo de cadastro de instituições ([app/modules/auth/instituicoes/](app/modules/auth/instituicoes/)), que espelha o de usuários ([app/modules/auth/usuarios/](app/modules/auth/usuarios/)):
 
-- **Router** ([router.py](app/modules/auth/instituicoes/router.py)): expõe `POST /register` e `POST /login`. A função `get_institution_auth_service` recebe a `Session` via `Depends(get_db)` e monta `InstitutionAuthService(InstitutionAuthRepository(db))`. O Router só cuida de HTTP.
+- **Router** ([router.py](app/modules/auth/instituicoes/router.py)): expõe `POST /register` (o login é único, em `/auth/login`). A função `get_institution_auth_service` recebe a `Session` via `Depends(get_db)` e monta `InstitutionAuthService(InstitutionAuthRepository(db))`. O Router só cuida de HTTP.
 - **Schemas** ([app/database/schemas.py](app/database/schemas.py)): `UsuarioCreate` (entrada do cadastro), `LoginRequest` (entrada do login) e `UsuarioOut` (saída, sem senha).
 - **Service** ([service.py](app/modules/auth/instituicoes/service.py)): regras de negócio. Só aceita `tipo_usuario = instituicao`, e-mail único, hash e verificação de senha com bcrypt. Lança `ConflictError` (409) ou `UnauthorizedError` (401). Não conhece HTTP nem a `Session`.
 - **Repository** ([repository.py](app/modules/auth/instituicoes/repository.py)): a única camada que usa a `Session` (`select`, `add`, `commit`, `refresh`). Devolve objetos do model, nunca a sessão.
@@ -99,8 +99,8 @@ backend/
 │   ├── health/router.py         # GET /health
 │   └── modules/
 │       ├── auth/dependencies.py # get_current_user (valida o JWT)
-│       ├── auth/usuarios/       # POST /users/auth/register, /login, /token
-│       ├── auth/instituicoes/   # POST /institutions/auth/register, /login (ORM)
+│       ├── auth/usuarios/       # POST /users/auth/register; POST /auth/login e /auth/token
+│       ├── auth/instituicoes/   # POST /institutions/auth/register (ORM)
 │       └── instituicoes/        # GET /instituicoes (fake_db, exige token)
 ├── migrations/
 │   ├── env.py
@@ -119,15 +119,15 @@ backend/
 # Cadastra uma Instituição (grava em usuarios, com a senha em hash bcrypt)
 curl -X POST http://localhost:8000/api/v1/institutions/auth/register \
   -H "Content-Type: application/json" \
-  -d "{\"nome\": \"ASPAAN\", \"email\": \"contato@aspaan.org\", \"senha\": \"senha1234\", \"tipo_usuario\": \"instituicao\"}"
+  -d "{\"nome\": \"ASPAAN\", \"email\": \"contato@aspaan.org\", \"senha\": \"senha1234\", \"cidade\": \"Anápolis\", \"uf\": \"GO\"}"
 
 # Faz login
-curl -X POST http://localhost:8000/api/v1/institutions/auth/login \
+curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\": \"contato@aspaan.org\", \"senha\": \"senha1234\"}"
 ```
 
-Respostas esperadas: cadastro `201`; login `200` com `{"access_token": "...", "token_type": "bearer"}`; `401` para senha errada, e-mail inexistente ou `tipo_usuario` diferente de `instituicao` no cadastro; `409` para e-mail já cadastrado; `422` para payload inválido (ex.: senha com menos de 8 caracteres).
+Respostas esperadas: cadastro `201`; login `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; `401` para senha errada, e-mail inexistente ou `tipo_usuario` diferente de `instituicao` no cadastro; `409` para e-mail já cadastrado; `422` para payload inválido (ex.: senha com menos de 8 caracteres).
 
 Com o token, acesse as rotas protegidas:
 
@@ -137,7 +137,7 @@ curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOK
 
 Sem token, com token inválido ou expirado → `401`.
 
-No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /users/auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
+No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
 
 A suíte automatizada fica em `test/` e roda com `python -m pytest test` (usa SQLite em memória, não precisa do PostgreSQL).
 

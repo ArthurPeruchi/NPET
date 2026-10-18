@@ -8,15 +8,16 @@ function resolverLogo(inst: Instituicao): Instituicao {
 }
 
 async function requisitar<T>(endpoint: string): Promise<T> {
+    const token = localStorage.getItem("token");
     const response = await fetch(`${api_url}/${endpoint}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
-    // Token ausente ou expirado: limpa a sessão e volta para o login.
+    // Token ausente ou expirado: limpa a sessão e volta para o login (sem recarregar se já estiver nele).
     if (response.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("role");
-        window.location.href = "/";
+        if (window.location.pathname !== "/") window.location.href = "/";
         throw new Error("Sessão expirada. Faça login novamente.");
     }
 

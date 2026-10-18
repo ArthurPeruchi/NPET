@@ -20,9 +20,9 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def create_access_token(id_usuario: int) -> str:
+def create_access_token(id_usuario: int, tipo_usuario: str) -> str:
     expira_em = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
-    return jwt.encode({"sub": str(id_usuario), "exp": expira_em}, settings.JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode({"sub": str(id_usuario), "tipo_usuario": tipo_usuario, "exp": expira_em}, settings.JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
 def decode_access_token(token: str) -> int:

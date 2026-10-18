@@ -31,9 +31,10 @@ HTTP → Router (Controller) → Service (regra) → Repository (dados) → Post
 
 | Módulo | Rotas | Camadas |
 |---|---|---|
-| Usuários | `POST /api/v1/users/auth/register` · `POST /api/v1/users/auth/login` · `POST /api/v1/users/auth/token` (formulário OAuth2) | `app/modules/auth/usuarios/` |
+| Login (todos os tipos) | `POST /api/v1/auth/login` · `POST /api/v1/auth/token` (formulário OAuth2) | `app/modules/auth/usuarios/` |
+| Cadastro de usuário | `POST /api/v1/users/auth/register` | `app/modules/auth/usuarios/` |
 | Instituições (listagem, mock) | `GET /api/v1/instituicoes` · `GET /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
-| Cadastro e login de instituição | `POST /api/v1/institutions/auth/register` · `POST /api/v1/institutions/auth/login` | `app/modules/auth/instituicoes/` |
+| Cadastro de instituição (usuário + perfil em `instituicoes`) | `POST /api/v1/institutions/auth/register` | `app/modules/auth/instituicoes/` |
 
 ## Estrutura de diretórios
 
@@ -55,8 +56,8 @@ backend/
 │   └── modules/
 │       ├── auth/
 │       │   ├── dependencies.py  # get_current_user (valida o JWT das rotas protegidas)
-│       │   ├── usuarios/        # register/login/token (ORM)
-│       │   └── instituicoes/    # register/login de instituição (ORM, tabela usuarios)
+│       │   ├── usuarios/        # register + login único /auth/login e /auth/token (ORM)
+│       │   └── instituicoes/    # register de instituição (ORM, tabela usuarios)
 │       └── instituicoes/        # listagem de instituições (fake_db, exige token)
 │           ├── repository.py
 │           ├── service.py
@@ -97,7 +98,7 @@ A API sobe em `http://localhost:8000`.
 | `PORT` | não | `8000` | Porta do Uvicorn |
 | `API_PREFIX` | não | `/api/v1` | Prefixo das rotas |
 | `JWT_SECRET_KEY` | **sim** | `python -c "import secrets; print(secrets.token_hex(32))"` | Chave que assina os tokens |
-| `JWT_EXPIRE_MINUTES` | não | `60` | Validade do token |
+| `JWT_EXPIRE_MINUTES` | não | `30` | Validade do token |
 | `DEBUG` | não | `true` | Com `true`, o SQLAlchemy loga todo SQL executado |
 
 ### Comandos do Alembic
@@ -120,13 +121,13 @@ alembic revision --autogenerate -m "descricao"        # gera migration após alt
 
 ## Autenticação (OAuth2 + JWT)
 
-O login (`/users/auth/login` ou `/institutions/auth/login`) devolve um token JWT assinado (HS256), com o `id_usuario` em `sub` e validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/modules/auth/dependencies.py](app/modules/auth/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>`. Token ausente, inválido, expirado ou de usuário inexistente → `401`.
+O login é único para todos os tipos (`POST /auth/login`) e devolve o token JWT (HS256) junto com o `tipo_usuario`. O token carrega o `id_usuario` em `sub`, o tipo em `tipo_usuario` e a validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/modules/auth/dependencies.py](app/modules/auth/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>`. Token ausente, inválido, expirado ou de usuário inexistente → `401`. Para restringir uma rota por tipo, use `Depends(require_role(TipoUsuario.instituicao))`, que responde `403` aos demais tipos. A senha é limitada a 72 bytes (limite do bcrypt); acima disso o cadastro responde `422`.
 
-No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /users/auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
+No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
 
 ```bash
-# o login devolve {"access_token": "...", "token_type": "bearer"}
-curl -X POST http://localhost:8000/api/v1/users/auth/login \
+# o login devolve {"access_token": "...", "token_type": "bearer", "tipo_usuario": "doador"}
+curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\": \"doador@email.com.br\", \"senha\": \"senha1234\"}"
 

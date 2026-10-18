@@ -2,7 +2,7 @@ from datetime import date, time
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from app.database.models import (
     FormaEntrega,
@@ -22,6 +22,16 @@ CNPJ = Annotated[str, Field(pattern=r"^\d{14}$", description="14 dígitos, sem p
 UF = Annotated[str, Field(pattern=r"^[A-Z]{2}$", description="Sigla em maiúsculo, ex.: GO")]
 
 
+def _limitar_bytes_da_senha(senha: str) -> str:
+    # O bcrypt aceita no máximo 72 bytes; acentos ocupam mais de 1 byte em UTF-8.
+    if len(senha.encode("utf-8")) > 72:
+        raise ValueError("A senha deve ter no máximo 72 bytes.")
+    return senha
+
+
+Senha = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_limitar_bytes_da_senha)]
+
+
 class ORMBase(BaseModel):
     """Base para schemas de saída (leem objetos SQLAlchemy)."""
 
@@ -35,10 +45,20 @@ class ORMBase(BaseModel):
 class UsuarioCreate(BaseModel):
     nome: str = Field(min_length=1, max_length=45)
     email: EmailStr
-    senha: str = Field(min_length=8, max_length=72)  # texto puro; gerar hash na rota
+    senha: Senha  # texto puro; gerar hash na rota
     telefone: str | None = Field(default=None, max_length=20)
     cpf: CPF | None = None
     tipo_usuario: TipoUsuario
+
+
+class InstituicaoRegister(BaseModel):
+    nome: str = Field(min_length=1, max_length=45)
+    email: EmailStr
+    senha: Senha
+    telefone: str | None = Field(default=None, max_length=20)
+    cnpj: CNPJ | None = None
+    cidade: str = Field(min_length=1, max_length=100)
+    uf: UF
 
 
 class UsuarioUpdate(BaseModel):
@@ -274,3 +294,9 @@ class DoacaoOut(ORMBase):
 class LoginRequest(BaseModel):
     email: EmailStr
     senha: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    tipo_usuario: TipoUsuario

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     DATABASE_URL: str
     JWT_SECRET_KEY: str
-    JWT_EXPIRE_MINUTES: int = 60
+    JWT_EXPIRE_MINUTES: int = 30
 
     @property
     def is_production(self) -> bool:
