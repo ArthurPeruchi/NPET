@@ -169,7 +169,7 @@ export default function Login() {
                     <button
                         type="button"
                         className="login-link"
-                        onClick={() => {/* TODO */}}
+                        onClick={() => navigate("/cadastro")}
                     >
                         Criar nova conta
                     </button>

@@ -6,6 +6,7 @@ import Home from './pages/Home/Home'
 import Doacoes from './pages/Doacoes/Doacoes'
 import NavBar from './components/NavBar/NavBar'
 import Login from './pages/Login/Login'
+import Cadastro from './pages/Cadastro/Cadastro'
 
 function AppContent() {
   useScrollToTop();
@@ -16,6 +17,7 @@ function AppContent() {
         <Route path="/" element={<Login />} />
         <Route path="/inicio" element={<Home />} />
         <Route path="/doacoes" element={<Doacoes />} />
+        <Route path="/cadastro" element={<Cadastro />} />
         <Route path="*" element={<NavBar />} />
       </Routes>
     </div>
