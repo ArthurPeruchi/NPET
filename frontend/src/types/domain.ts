@@ -18,6 +18,7 @@ export interface Instituicao {
     animaisSobCuidado?: number;
     horarioFuncionamento?: string;
     descricao?: string;
+    principaisNecessidades?: string;
     aceitaVoluntarios?: boolean;
     aceitaDoacoes: boolean;
     redesSociais?: RedesSociais;
