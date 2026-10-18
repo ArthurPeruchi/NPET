@@ -1,5 +1,5 @@
 from app.core.exceptions import ConflictError, UnauthorizedError
-from app.core.security import hash_password, verify_password
+from app.core.security import create_access_token, hash_password, verify_password
 from app.database.models import TipoUsuario, Usuario
 from app.database.schemas import UsuarioCreate
 from app.modules.auth.usuarios.repository import AuthRepository
@@ -18,7 +18,7 @@ class AuthService:
         if not verify_password(password, usuario.senha):
             raise UnauthorizedError("E-mail ou senha inválidos.")
 
-        return "Autenticação realizada com sucesso."
+        return create_access_token(usuario.id_usuario)
 
     def register(self, data: UsuarioCreate) -> Usuario:
         if data.tipo_usuario == TipoUsuario.administrador:

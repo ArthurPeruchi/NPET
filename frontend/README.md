@@ -39,12 +39,16 @@ Os protótipos da interface foram desenvolvidos no Figma e estão disponíveis n
 | TypeScript | 6.0 | Superset tipado do JavaScript |
 | Vite | 8.0 | Bundler e servidor de desenvolvimento |
 
-### Backend *(planejado)*
+### Backend
 | Tecnologia | Descrição |
 |---|---|
 | Python + FastAPI | API REST do servidor |
 | PostgreSQL | Banco de dados relacional |
 | JWT + OAuth 2.0 | Autenticação e autorização |
+
+### Backend *(planejado)*
+| Tecnologia | Descrição |
+|---|---|
 | Mercado Pago API | Processamento de pagamentos (PIX e cartão) |
 
 ---

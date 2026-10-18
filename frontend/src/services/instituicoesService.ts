@@ -8,7 +8,18 @@ function resolverLogo(inst: Instituicao): Instituicao {
 }
 
 async function requisitar<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${api_url}/${endpoint}`);
+    const response = await fetch(`${api_url}/${endpoint}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+
+    // Token ausente ou expirado: limpa a sessão e volta para o login.
+    if (response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        window.location.href = "/";
+        throw new Error("Sessão expirada. Faça login novamente.");
+    }
+
     if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(data?.detail ?? "Não foi possível carregar as instituições.");

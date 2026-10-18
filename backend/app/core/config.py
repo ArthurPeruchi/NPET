@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api/v1"
     DEBUG: bool = True
     DATABASE_URL: str
+    JWT_SECRET_KEY: str
+    JWT_EXPIRE_MINUTES: int = 60
 
     @property
     def is_production(self) -> bool:

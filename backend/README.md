@@ -2,7 +2,7 @@
 
 Backend da aplicação **NPET** — plataforma que conecta doadores a ONGs e instituições de proteção animal.
 
-> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro e login de usuários e de instituições (`/auth/*` e `/institutions/auth/*`) (senha com hash bcrypt). A listagem de instituições (`/instituicoes`) segue servida por dados mockados (`fake_db.py`).
+> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro e login de usuários e de instituições (`/users/auth/*` e `/institutions/auth/*`), com senha em bcrypt e token JWT; as rotas de `/instituicoes` exigem o token. A listagem de instituições (`/instituicoes`) segue servida por dados mockados (`fake_db.py`).
 
 ## Stack
 
@@ -12,6 +12,8 @@ Backend da aplicação **NPET** — plataforma que conecta doadores a ONGs e ins
 - **SQLAlchemy** `2.0.36` (ORM) / **psycopg2-binary** `2.9.10` (driver PostgreSQL)
 - **Alembic** `1.14.0` (migrations)
 - **bcrypt** `5.0.0` (hash de senha)
+- **PyJWT** `2.10.1` (tokens JWT) / **python-multipart** `0.0.20` (formulário OAuth2 do Swagger)
+- **pytest** `8.3.4` / **httpx** `0.28.1` (testes)
 
 ## Arquitetura
 
@@ -29,7 +31,7 @@ HTTP → Router (Controller) → Service (regra) → Repository (dados) → Post
 
 | Módulo | Rotas | Camadas |
 |---|---|---|
-| Usuários | `POST /api/v1/auth/register` · `POST /api/v1/auth/login` | `app/modules/auth/usuarios/` |
+| Usuários | `POST /api/v1/users/auth/register` · `POST /api/v1/users/auth/login` · `POST /api/v1/users/auth/token` (formulário OAuth2) | `app/modules/auth/usuarios/` |
 | Instituições (listagem, mock) | `GET /api/v1/instituicoes` · `GET /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
 | Cadastro e login de instituição | `POST /api/v1/institutions/auth/register` · `POST /api/v1/institutions/auth/login` | `app/modules/auth/instituicoes/` |
 
@@ -42,7 +44,7 @@ backend/
 │   ├── core/
 │   │   ├── config.py            # configuração global (lê o .env, inclui DATABASE_URL)
 │   │   ├── exceptions.py        # AppError e subclasses (401, 403, 404, 409)
-│   │   └── security.py          # hash/verificação de senha (bcrypt)
+│   │   └── security.py          # bcrypt e geração/validação do JWT
 │   ├── database/
 │   │   ├── database.py          # engine, SessionLocal, Base e get_db()
 │   │   ├── models.py            # models SQLAlchemy (tabelas)
@@ -52,13 +54,15 @@ backend/
 │   ├── health/router.py         # GET /health
 │   └── modules/
 │       ├── auth/
-│       │   ├── usuarios/        # register/login (ORM)
+│       │   ├── dependencies.py  # get_current_user (valida o JWT das rotas protegidas)
+│       │   ├── usuarios/        # register/login/token (ORM)
 │       │   └── instituicoes/    # register/login de instituição (ORM, tabela usuarios)
-│       └── instituicoes/        # listagem de instituições (fake_db)
+│       └── instituicoes/        # listagem de instituições (fake_db, exige token)
 │           ├── repository.py
 │           ├── service.py
 │           └── router.py
 ├── migrations/                  # Alembic (env.py + versions/)
+├── test/                        # testes de segurança (pytest)
 ├── alembic.ini
 ├── .env.example                 # modelo de variáveis de ambiente
 ├── requirements.txt
@@ -74,7 +78,7 @@ Pré-requisitos: **Python 3.10+** e um **PostgreSQL** acessível (local ou em co
 python -m venv .venv
 .venv\Scripts\Activate.ps1          # Windows (PowerShell) — ou .venv\Scripts\activate.bat no CMD
 pip install -r requirements.txt
-copy .env.example .env              # e ajuste DATABASE_URL
+copy .env.example .env              # e ajuste DATABASE_URL e JWT_SECRET_KEY
 alembic upgrade head                # cria/atualiza as tabelas
 uvicorn app.main:app --reload
 ```
@@ -92,6 +96,8 @@ A API sobe em `http://localhost:8000`.
 | `APP_ENV` | não | `development` | Ambiente de execução |
 | `PORT` | não | `8000` | Porta do Uvicorn |
 | `API_PREFIX` | não | `/api/v1` | Prefixo das rotas |
+| `JWT_SECRET_KEY` | **sim** | `python -c "import secrets; print(secrets.token_hex(32))"` | Chave que assina os tokens |
+| `JWT_EXPIRE_MINUTES` | não | `60` | Validade do token |
 | `DEBUG` | não | `true` | Com `true`, o SQLAlchemy loga todo SQL executado |
 
 ### Comandos do Alembic
@@ -112,9 +118,32 @@ alembic revision --autogenerate -m "descricao"        # gera migration após alt
 - ReDoc: `http://localhost:8000/redoc`
 - Healthcheck: `http://localhost:8000/api/v1/health`
 
+## Autenticação (OAuth2 + JWT)
+
+O login (`/users/auth/login` ou `/institutions/auth/login`) devolve um token JWT assinado (HS256), com o `id_usuario` em `sub` e validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/modules/auth/dependencies.py](app/modules/auth/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>`. Token ausente, inválido, expirado ou de usuário inexistente → `401`.
+
+No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /users/auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
+
+```bash
+# o login devolve {"access_token": "...", "token_type": "bearer"}
+curl -X POST http://localhost:8000/api/v1/users/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\": \"doador@email.com.br\", \"senha\": \"senha1234\"}"
+
+# rotas protegidas exigem o token no cabeçalho Authorization
+curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOKEN"
+```
+
+## Testes
+
+```bash
+python -m pytest test
+```
+
+A suíte usa SQLite em memória; não precisa do PostgreSQL.
+
 ## Próximos passos
 
-- Gerar/validar um token real (JWT) nas rotas autenticadas.
 - Migrar `modules/instituicoes` (hoje com dados mockados) para a ORM.
 - CRUD de redes sociais, necessidades e doações (models já existem).
 

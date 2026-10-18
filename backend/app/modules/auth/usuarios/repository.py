@@ -11,6 +11,9 @@ class AuthRepository:
     def find_credential(self, email: str) -> Usuario | None:
         return self._db.scalar(select(Usuario).where(Usuario.email == email))
 
+    def get_by_id(self, id_usuario: int) -> Usuario | None:
+        return self._db.get(Usuario, id_usuario)
+
     def email_exists(self, email: str) -> bool:
         return self.find_credential(email) is not None
 

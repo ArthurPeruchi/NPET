@@ -20,4 +20,4 @@ def register(data: UsuarioCreate, service: InstitutionAuthService = Depends(get_
 
 @router.post("/login", summary="Autentica uma instituição com e-mail e senha")
 def login(data: LoginRequest, service: InstitutionAuthService = Depends(get_institution_auth_service)):
-    return {"message": service.login(data.email, data.senha)}
+    return {"access_token": service.login(data.email, data.senha), "token_type": "bearer"}

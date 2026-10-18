@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 
+from app.modules.auth.dependencies import get_current_user
 from app.modules.instituicoes.repository import (
     InstituicaoRepository,
     get_instituicao_repository,
@@ -7,7 +8,7 @@ from app.modules.instituicoes.repository import (
 from app.modules.instituicoes.schemas import InstituicaoResponse
 from app.modules.instituicoes.service import InstituicaoService
 
-router = APIRouter(prefix="/instituicoes", tags=["instituicoes"])
+router = APIRouter(prefix="/instituicoes", tags=["instituicoes"], dependencies=[Depends(get_current_user)])
 
 
 def get_service(

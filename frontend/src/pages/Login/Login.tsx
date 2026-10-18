@@ -42,16 +42,14 @@ export default function Login() {
             const endpoint = 
                 tipoUsuario === "instituicao" 
                     ? "institutions/auth/login" 
-                    : "auth/login";
+                    : "users/auth/login";
 
             const response = await fetch(`${api_url}/${endpoint}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ 
-                    email, 
-                    password: senha })
+                body: JSON.stringify({ email, senha })
             });
 
             const data = await response.json();
@@ -61,11 +59,7 @@ export default function Login() {
                 return;
             }
 
-            console.log("Login bem-sucedido:", data);
-            
-            /* 
-            No ciclo 2 do NPET, aqui irá salvar o token!
-            */
+            localStorage.setItem("token", data.access_token);
             localStorage.setItem("role", tipoUsuario);
 
             setTimeout(() => {

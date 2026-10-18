@@ -15,11 +15,6 @@ python -m venv .venv
 .venv\Scripts\activate.bat
 ```
 
-> Se o PowerShell recusar rodar `Activate.ps1` (erro de "execution policy"),
-> use o `activate.bat` pelo CMD, ou simplesmente chame os executáveis de
-> dentro de `.venv\Scripts\` diretamente, sem ativar (ex.:
-> `.venv\Scripts\python.exe -m uvicorn app.main:app --reload`).
-
 ## 2. Instalar as dependências:
 
 ```bash
@@ -31,7 +26,8 @@ pip install -r requirements.txt
 ```bash
 copy .env.example .env
 ```
-Ajuste `DATABASE_URL` no `.env` para apontar para o seu PostgreSQL (como subir um: [STARTUP.md](STARTUP.md#2-subindo-o-postgresql)).
+
+Ajuste `DATABASE_URL` no `.env` e defina `JWT_SECRET_KEY` (gere com `python -c "import secrets; print(secrets.token_hex(32))"`); sem ela a API não sobe. `DATABASE_URL` deve apontar para o seu PostgreSQL (como subir um: [STARTUP.md](STARTUP.md#2-subindo-o-postgresql)).
 
 ## Criação/atualização das tabelas
 ```bash
@@ -61,16 +57,16 @@ A API sobe em `http://localhost:8000`.
 Cadastre o usuário no banco e faça login com ele:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/auth/register \
+curl -X POST http://localhost:8000/api/v1/users/auth/register \
   -H "Content-Type: application/json" \
   -d "{\"nome\": \"Doador\", \"email\": \"doador@email.com.br\", \"senha\": \"senha1234\", \"tipo_usuario\": \"doador\"}"
 
-curl -X POST http://localhost:8000/api/v1/auth/login \
+curl -X POST http://localhost:8000/api/v1/users/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\": \"doador@email.com.br\", \"senha\": \"senha1234\"}"
 ```
 
-Credencial certa → `200` com `{"message": "Autenticação realizada com sucesso."}`; errada → `401`.
+Credencial certa → `200` com `{"access_token": "...", "token_type": "bearer"}`; errada → `401`.
 
 ### Como instituição:
 
@@ -86,4 +82,13 @@ curl -X POST http://localhost:8000/api/v1/institutions/auth/login \
   -d "{\"email\": \"instituicao@email.com.br\", \"senha\": \"senha1234\"}"
 ```
 
-Credencial certa → `200` com `{"message": "Autenticação realizada com sucesso."}`; errada → `401`.
+Credencial certa → `200` com `{"access_token": "...", "token_type": "bearer"}`; errada → `401`.
+
+## 7. Acessar rotas protegidas e rodar os testes:
+
+```bash
+curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOKEN"
+python -m pytest test
+```
+
+No Swagger, use o botão **Authorize**: e-mail em `username`, senha em `password`, `client_id` e `client_secret` em branco.
