@@ -1,5 +1,3 @@
-""" Endpoint de healthcheck: usado por monitoramento / deploy."""
-
 from fastapi import APIRouter
 
 from app.core.config import settings

@@ -15,11 +15,6 @@ python -m venv .venv
 .venv\Scripts\activate.bat
 ```
 
-> Se o PowerShell recusar rodar `Activate.ps1` (erro de "execution policy"),
-> use o `activate.bat` pelo CMD, ou simplesmente chame os executáveis de
-> dentro de `.venv\Scripts\` diretamente, sem ativar (ex.:
-> `.venv\Scripts\python.exe -m uvicorn app.main:app --reload`).
-
 ## 2. Instalar as dependências:
 
 ```bash
@@ -31,6 +26,15 @@ pip install -r requirements.txt
 ```bash
 copy .env.example .env
 ```
+
+Ajuste `DATABASE_URL` no `.env` e defina `JWT_SECRET_KEY` (gere com `python -c "import secrets; print(secrets.token_hex(32))"`); sem ela a API não sobe. `DATABASE_URL` deve apontar para o seu PostgreSQL (como subir um: [STARTUP.md](STARTUP.md#2-subindo-o-postgresql)).
+
+## Criação/atualização das tabelas
+```bash
+python -m alembic upgrade head
+```
+
+> A migration inicial já está versionada em `migrations/versions/`. Só rode `alembic revision --autogenerate -m "..."` depois de alterar `app/database/models.py`.
 
 ## 4. Rodar a aplicação com hot-reload:
 
@@ -50,22 +54,41 @@ A API sobe em `http://localhost:8000`.
 
 ### Como usuário:
 
-Credencial hardcoded (ver [app/modules/auth/usuarios/fake_db.py](app/modules/auth/usuarios/fake_db.py)):
+Cadastre o usuário no banco e faça login com ele:
 
 ```bash
+curl -X POST http://localhost:8000/api/v1/users/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"nome\": \"Doador\", \"email\": \"doador@email.com.br\", \"senha\": \"senha1234\", \"tipo_usuario\": \"doador\"}"
+
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"doador@email.com.br\", \"password\": \"senha123\"}"
+  -d "{\"email\": \"doador@email.com.br\", \"senha\": \"senha1234\"}"
 ```
+
+Credencial certa → `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; errada → `401`.
 
 ### Como instituição:
 
-Credencial hardcoded (ver [app/modules/auth/instituicoes/fake_db.py](app/modules/auth/instituicoes/fake_db.py)):
+Cadastre a instituição e faça login com ela:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/institutions/auth/login \
+curl -X POST http://localhost:8000/api/v1/institutions/auth/register \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"instituicao@email.com.br\", \"password\": \"senha123\"}"
+  -d "{\"nome\": \"ASPAAN\", \"email\": \"instituicao@email.com.br\", \"senha\": \"senha1234\", \"cidade\": \"Anápolis\", \"uf\": \"GO\"}"
+
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\": \"instituicao@email.com.br\", \"senha\": \"senha1234\"}"
 ```
 
-Nos dois casos: credencial certa → `200` com `{"success": true, "message": "Autenticação realizada com sucesso."}`; credencial errada → `401`.
+Credencial certa → `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; errada → `401`.
+
+## 7. Acessar rotas protegidas e rodar os testes:
+
+```bash
+curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOKEN"
+python -m pytest test
+```
+
+No Swagger, use o botão **Authorize**: e-mail em `username`, senha em `password`, `client_id` e `client_secret` em branco.

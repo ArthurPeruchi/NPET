@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 type BotaoProps = {
-  variant?: "primario" | "secundario";
+  variant?: "primario" | "secundario" | "terciario";
   size?: "sm" | "md" | "lg";
   disabled?: boolean;
   fullWidth?: boolean;
@@ -62,7 +62,11 @@ export default function Botao({
       onClick={onClick}
       style={style}
     >
-      {icon && <span className="botao-icone">{icon}</span>}
+      {icon && (
+        <span className={`botao-icone ${!children ? "botao-icone--sozinho" : ""}`}>
+          {icon}
+        </span>
+      )}
       {children}
     </button>
   );

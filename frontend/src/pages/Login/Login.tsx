@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/useAuth";
 import logoNpet from "../../assets/logoNpet.png";
 import Botao from "../../components/Botao/Botao";
+import CampoTexto from "../../components/CampoTexto/CampoTexto";
 import "./Login.css";
 
 export default function Login() {
@@ -12,65 +14,63 @@ export default function Login() {
     const [email, setEmail]     = useState("");
     const [senha, setSenha]     = useState("");
     const [erro,  setErro]      = useState<string | null>(null);
+    const [erroEmail, setErroEmail] = useState("");
+    const [erroSenha, setErroSenha] = useState("");
 
-    const [tipoUsuario, setTipoUsuario] = useState<"instituicao" | "doador">("doador");
+    const { login } = useAuth();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErro(null);
+        setErroEmail("");
+        setErroSenha("");
 
-        if (!email || !senha) {
-            setErro("Preencha todos os campos.");
-            return;
+        let emailInvalido = "";
+        let senhaInvalida = "";
+
+        if (!email.trim()) {
+            emailInvalido = "Preencha o e-mail.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+            emailInvalido = "Digite um e-mail válido.";
         }
 
-        const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!senha) {
+            senhaInvalida = "Preencha a senha.";
+        }
 
-        if (!emailValido) {
-            setErro("Digite um e-mail válido.");
+        setErroEmail(emailInvalido);
+        setErroSenha(senhaInvalida);
+
+        if (emailInvalido || senhaInvalida) {
             return;
         }
 
         try {
-
-            /* 
-            No ciclo 2 do NPET, não precisará de diferentes endpoints para login de
-            diferentes tipos de usuário, mas por enquanto, precisa ser assim porque o
-            back ainda não retorna o tipo de usuário.
-            */
-
-            const endpoint = 
-                tipoUsuario === "instituicao" 
-                    ? "institutions/auth/login" 
-                    : "auth/login";
-
-            const response = await fetch(`${api_url}/${endpoint}`, {
+            const response = await fetch(`${api_url}/auth/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ 
-                    email, 
-                    password: senha })
+                body: JSON.stringify({ email, senha })
             });
 
             const data = await response.json();
 
-            if (!response.ok) {
-                setErro(data.detail || "Erro ao fazer login.");
+           if (!response.ok) {
+                const mensagem = data.detail || "Erro ao fazer login.";
+
+                if (mensagem.toLowerCase().includes("e-mail ou senha inválidos")) {
+                    setErroEmail(" ");
+                    setErroSenha(" ");
+                    setErro("E-mail ou senha inválidos.");
+                } else {
+                    setErro(mensagem);
+                }
+
                 return;
             }
 
-            console.log("Login bem-sucedido:", data);
-            
-            /* 
-            No ciclo 2 do NPET, aqui irá salvar o token!
-            */
-            localStorage.setItem("role", tipoUsuario);
-
-            setTimeout(() => {
-                navigate("/inicio");
-            }, 100);
+            login(data.access_token, data.tipo_usuario);
 
         }catch (err) {
             console.error("Erro ao fazer login:", err);
@@ -98,40 +98,29 @@ export default function Login() {
                     onSubmit={handleSubmit}
                     noValidate
                     aria-label="Formulário de login"
-                    >
-                    {erro && (
-                        <p className="login-erro" role="alert">{erro}</p>
-                    )}
-                    <fieldset className="login-campo">
-                        <legend className="login-campo-label">E-mail de Usuário</legend>
-                        <input
-                            className="login-input"
-                            type="email"
-                            id="email"
-                            placeholder="usuario@dominio.com"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            autoComplete="email"
-                            required
-                            aria-required="true"
-                        />
-                    </fieldset>
+                >
+                    {erro && <p className="login-erro">{erro}</p>}
+                 
+                    <CampoTexto
+                        label="E-mail de Usuário"
+                        variante="email"
+                        value={email}
+                        onChange={setEmail}
+                        autoComplete="email"
+                        required
+                        erro={erroEmail}
+                    />
 
-                    <fieldset className="login-campo">
-                        <legend className="login-campo-label">Senha</legend>
-                        <input
-                            className="login-input"
-                            id="senha"
-                            type="password"
-                            placeholder="••••••••"
-                            value={senha}
-                            onChange={e => setSenha(e.target.value)}
-                            autoComplete="current-password"
-                            required
-                            aria-required="true"
-                        />
-                    </fieldset>
-                    
+                    <CampoTexto
+                        label="Senha"
+                        variante="senha"
+                        value={senha}
+                        onChange={setSenha}
+                        autoComplete="current-password"
+                        required
+                        erro={erroSenha}
+                    />
+
                     <button
                         type="button"
                         className="login-link"
@@ -157,42 +146,11 @@ export default function Login() {
                     <button
                         type="button"
                         className="login-link"
-                        onClick={() => {/* TODO */}}
+                        onClick={() => navigate("/cadastro")}
                     >
                         Criar nova conta
                     </button>
                 </p>
-
-                <hr className="login-divisor" />
-                <div className="login-tipo-usuario">
-                    <p className="login-tipo-usuario">
-                        Mude o tipo de usuário nos botões abaixo! Está assim por enquanto
-                        porque o backend ainda não retorna a role do usuário; será ajustado 
-                        no Ciclo 2.
-                    </p>
-
-                    <p className="login-tipo-atual">
-                        Tipo de usuário atual: <strong>{tipoUsuario}</strong>
-                    </p>
-
-                    <div className="login-tipo-botoes">
-                        <Botao
-                            size="sm"
-                            className="btn-login-tipo"
-                            onClick={() => setTipoUsuario("doador")}
-                        >
-                            Doador
-                        </Botao>
-
-                        <Botao
-                            size="sm"
-                            className="btn-login-tipo"
-                            onClick={() => setTipoUsuario("instituicao")}
-                        >
-                            Instituição
-                        </Botao>
-                    </div>
-                </div>
             </div>
         </div>
     );

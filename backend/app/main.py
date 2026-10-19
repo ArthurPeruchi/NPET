@@ -1,13 +1,9 @@
-"""
-Ponto de entrada da aplicação FastAPI.
-
-Execute com:  uvicorn app.main:app --reload
-Documentação: http://localhost:8000/docs
-"""
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import settings
@@ -38,6 +34,9 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
     app.include_router(api_router, prefix=settings.API_PREFIX)
+
+    # Arquivos mockados (p. ex.: logos das instituições em /static/instituicoes/).
+    app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
     @app.get("/", tags=["root"], summary="Informações básicas da API")
     def root() -> dict[str, str]:

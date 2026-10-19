@@ -36,6 +36,10 @@
   transition: all 200ms ease;
 }
 
+.passo svg {
+  display: block;
+}
+
 .passo--ativo {
   background-color: transparent;
   border: 3px solid var(--main-color);
@@ -56,18 +60,80 @@
   border: 2px solid #D9D9D9;
 }
 
-@media (max-width: 480px) {
-  .passo {
-    width: 44px;
-    height: 44px;
-  }
+.passo-label, .passo-contador {
+  display: none;
+}
 
-  .passo svg {
-    width: 22px;
-    height: 22px;
+.passo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 1024px) {
+  .linha-conectora {
+    width: clamp(40px, 5vw, 60px);
+  }
+}
+
+@media (max-width: 768px) {
+  .barra-progresso {
+    gap: 0;
+    padding-bottom: 20px;
+    margin-top: 0;
   }
 
   .linha-conectora {
-    width: clamp(20px, 5vw, 40px);
+    width: clamp(30px, 5vw, 60px);
+  }
+}
+
+@media (max-width: 480px) {
+  .barra-progresso {
+    width: 100%;
+    box-sizing: border-box;
+
+    justify-content: flex-start;
+
+    padding: 16px 0;
+  }
+  
+  .passo-wrap {
+    display: none;
+  }
+  
+  .passo-wrap--mobile-atual {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .linha-conectora {
+    display: none;
+  }
+
+  .passo-label {
+    display: block;
+    color: var(--main-color);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+  }
+
+  .passo-contador {
+    display: block;
+    color: var(--secondary-body-text-color);
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .passo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .passo svg {
+    width: 32px;
+    height: 32px;
   }
 }

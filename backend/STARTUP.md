@@ -1,96 +1,147 @@
 # NPET Backend — Guia de Construção (passo a passo)
 
-Este documento explica, de forma simples, o que existe hoje no backend do
-NPET e por quê.
+Este documento explica, de forma simples, o que existe hoje no backend do NPET, por quê, e como um novo desenvolvedor sobe o ambiente do zero.
 
-> **Estado atual:** o único entregável funcional é a **autenticação por login** (e-mail + senha), validada contra uma credencial **hardcoded** que simula o banco de dados. Tudo o mais (cadastro de usuário, ONGs, doações, necessidades) foi deliberadamente deixado de fora até este escopo estar fechado com a entrega.
+> **Estado atual:** os dados ficam em **PostgreSQL**, acessado pela ORM do **SQLAlchemy 2.0**; o schema do banco é versionado com **Alembic**. Entregues: cadastro/login de usuários (senha com hash bcrypt) com token JWT; as rotas de `/instituicoes` exigem o token. O cadastro de instituições (`/institutions/auth/register`) cria, na mesma transação, o registro em `usuarios` (com `tipo_usuario = instituicao`) e o perfil em `instituicoes` (nome, cidade, UF e CNPJ opcional). A listagem de instituições (`/instituicoes`) ainda usa dados mockados (`modules/instituicoes/fake_db.py`), mas dessa vez, é requisitado no backend.
 
 ---
 
-## 1. Arquitetura em 3 camadas:
-
-O fluxo de login atravessa as camadas assim:
+## 1. Arquitetura em 3 camadas
 
 ```
-HTTP → Router (Controller) → Service (regra) → Repository (dados) → "banco" (fake_db.py)
-       router.py             service.py        repository.py
+HTTP → Router (Controller) → Service (regra) → Repository (dados) → PostgreSQL
+       router.py             service.py        repository.py        (Session do SQLAlchemy)
 ```
 
-O módulo `auth/` tem dois percursos **idênticos**, um por tipo de quem
-autentica: `usuarios/` (`POST /auth/login`) e `instituicoes/`
-(`POST /institutions/auth/login`). Ambos têm as mesmas camadas:
+Exemplo com o módulo de cadastro de instituições ([app/modules/auth/instituicoes/](app/modules/auth/instituicoes/)), que espelha o de usuários ([app/modules/auth/usuarios/](app/modules/auth/usuarios/)):
 
-- **Router** ([usuarios/router.py](app/modules/auth/usuarios/router.py) · [instituicoes/router.py](app/modules/auth/instituicoes/router.py)): expõe o `POST .../login`. Só cuida de HTTP. Recebe o DTO já validado, chama o Service, devolve a resposta.
+- **Router** ([router.py](app/modules/auth/instituicoes/router.py)): expõe `POST /register` (o login é único, em `/auth/login`). A função `get_institution_auth_service` recebe a `Session` via `Depends(get_db)` e monta `InstitutionAuthService(InstitutionAuthRepository(db))`. O Router só cuida de HTTP.
+- **Schemas** ([app/database/schemas.py](app/database/schemas.py)): `UsuarioCreate` (entrada do cadastro), `LoginRequest` (entrada do login) e `UsuarioOut` (saída, sem senha).
+- **Service** ([service.py](app/modules/auth/instituicoes/service.py)): regras de negócio. Só aceita `tipo_usuario = instituicao`, e-mail único, hash e verificação de senha com bcrypt. Lança `ConflictError` (409) ou `UnauthorizedError` (401). Não conhece HTTP nem a `Session`.
+- **Repository** ([repository.py](app/modules/auth/instituicoes/repository.py)): a única camada que usa a `Session` (`select`, `add`, `commit`, `refresh`). Devolve objetos do model, nunca a sessão.
+- **Model** ([app/database/models.py](app/database/models.py)): a classe `Usuario` mapeia a tabela `usuarios`; instituições e usuários compartilham a tabela, diferenciados por `tipo_usuario`.
 
-- **Schema** ([usuarios/schemas.py](app/modules/auth/usuarios/schemas.py) · [instituicoes/schemas.py](app/modules/auth/instituicoes/schemas.py)): `LoginRequest` valida o formato das credenciais de entrada (e-mail válido, senha não vazia) antes de qualquer regra de negócio rodar. `LoginResponse` é o formato de saída.
+A conexão está em [app/database/database.py](app/database/database.py): `engine` (lê `DATABASE_URL`), `SessionLocal` e `get_db()`, que abre uma sessão por requisição e a fecha ao final.
 
-- **Service** ([usuarios/service.py](app/modules/auth/usuarios/service.py) · [instituicoes/service.py](app/modules/auth/instituicoes/service.py)): a regra de negócio. Pergunta ao Repository se a credencial existe e bate a senha. Não conhece HTTP nem sabe onde os dados estão guardados. Lança `UnauthorizedError` se a autenticação falhar.
+## 2. Subindo o PostgreSQL
 
-- **Repository** ([usuarios/repository.py](app/modules/auth/usuarios/repository.py) · [instituicoes/repository.py](app/modules/auth/instituicoes/repository.py)): a única camada que sabe *onde* os dados moram. Hoje consulta uma lista hardcoded; quando o banco entrar, só este arquivo muda.
+**Requer PostgreSQL instalado localmente:** crie usuário e banco (via `psql` ou pgAdmin):
 
-- **"Banco" fake** ([usuarios/fake_db.py](app/modules/auth/usuarios/fake_db.py) · [instituicoes/fake_db.py](app/modules/auth/instituicoes/fake_db.py)): um arquivo com uma lista Python simulando a tabela de credenciais. Credenciais de teste: usuário `admin@npet.org` / `npet123`; instituição `contato@ufnpet.edu.br` / `npet123`.
-
-## 2. Estrutura de diretórios:
-
-```
-+-------------------------------------------------------------------------------+
-¦ NPET-backend/                                                                 ¦
-¦ ├── app/                                                                      ¦
-¦ │   ├── main.py                  # cria o app FastAPI, CORS, handler de erros ¦
-¦ │   ├── core/                                                                 ¦
-¦ │   │   ├── config.py            # configuração global (lê o .env)            ¦
-¦ │   │   └── exceptions.py        # AppError / UnauthorizedError (401)         ¦
-¦ │   ├── api/                                                                  ¦
-¦ │   │   └── router.py            # junta os routers (health + auth)           ¦
-¦ │   ├── health/                                                               ¦
-¦ │   │   └── router.py            # GET /health                                ¦
-¦ │   └── modules/                                                              ¦
-¦ │       └── auth/                                                             ¦
-¦ │           ├── usuarios/        # POST /auth/login                           ¦
-¦ │           │   ├── fake_db.py       # credencial hardcoded (usuário)         ¦
-¦ │           │   ├── repository.py    # consulta o fake_db                     ¦
-¦ │           │   ├── schemas.py       # LoginRequest / LoginResponse           ¦
-¦ │           │   ├── service.py       # regra de autenticação                  ¦
-¦ │           │   └── router.py        # rotas HTTP                             ¦
-¦ │           └── instituicoes/    # POST /institutions/auth/login              ¦
-¦ │               ├── fake_db.py       # credencial hardcoded (instituição)     ¦
-¦ │               ├── repository.py    # consulta o fake_db                     ¦
-¦ │               ├── schemas.py       # LoginRequest / LoginResponse           ¦
-¦ │               ├── service.py       # regra de autenticação                  ¦
-¦ │               └── router.py        # rotas HTTP                             ¦
-¦ ├── .env.example                 # modelo de variáveis de ambiente            ¦
-¦ ├── .gitignore                                                                ¦
-¦ ├── requirements.txt                                                          ¦
-¦ ├── RUN.md                       # como rodar (resumido)                      ¦
-¦ └── STARTUP.md                   # este arquivo                               ¦
-+-------------------------------------------------------------------------------+
+```sql
+CREATE USER npet WITH PASSWORD 'npet';
+CREATE DATABASE npet OWNER npet;
 ```
 
-## 3. Testando o fluxo
-
-Como **usuário**:
+## 3. Setup inicial
 
 ```bash
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env
+```
+
+Edite o `.env`: aponte `DATABASE_URL` para o banco do passo 2 e defina a chave que assina os tokens JWT (sem ela a API não sobe):
+
+```env
+DATABASE_URL=postgresql+psycopg2://npet:npet@localhost:5432/npet
+JWT_SECRET_KEY=valor-gerado-abaixo
+```
+
+Para gerar a chave: `python -c "import secrets; print(secrets.token_hex(32))"`.
+
+> Senhas com caracteres especiais (`@`, `:`, `/`, `#`) precisam ser URL-encoded (ex.: `@` → `%40`).
+
+Teste a conexão (opcional) e crie as tabelas:
+
+```bash
+python -m app.database.test_conn      # deve imprimir "OK, conectou"
+alembic upgrade head                  # aplica migrations/versions/*
+```
+
+Suba a API:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+## 4. Migrations (Alembic)
+
+- A configuração fica em [alembic.ini](alembic.ini) e [migrations/env.py](migrations/env.py). O `env.py` lê `DATABASE_URL` do `.env` e usa `Base.metadata` dos models; a URL do `alembic.ini` é ignorada.
+- A primeira migration ([migrations/versions/521eeafa0ea9_schema_inicial.py](migrations/versions/521eeafa0ea9_schema_inicial.py)) cria todas as tabelas e tipos ENUM; o `downgrade` remove ambos.
+- Ao alterar `models.py`:
+
+```bash
+alembic revision --autogenerate -m "descricao da mudanca"
+alembic upgrade head
+```
+
+Pontos de atenção no PostgreSQL ao revisar migrations autogeradas:
+- Um mesmo ENUM usado em mais de uma tabela deve ser criado uma vez só (`postgresql.ENUM(name=..., create_type=False)` nas demais).
+- `drop_table` não remove os tipos ENUM; inclua o `DROP TYPE` no `downgrade`.
+
+## 5. Estrutura de diretórios
+
+```
+backend/
+├── app/
+│   ├── main.py                  # cria o app FastAPI, CORS, handler de erros, /static
+│   ├── core/
+│   │   ├── config.py            # configuração global (lê o .env)
+│   │   ├── exceptions.py        # AppError, Unauthorized/Forbidden/NotFound/Conflict
+│   │   └── security.py          # bcrypt e JWT
+│   ├── database/
+│   │   ├── database.py          # engine, SessionLocal, Base, get_db()
+│   │   ├── models.py            # tabelas (SQLAlchemy)
+│   │   ├── schemas.py           # DTOs (Pydantic)
+│   │   └── test_conn.py         # diagnóstico de conexão
+│   ├── api/router.py            # junta os routers
+│   ├── health/router.py         # GET /health
+│   └── modules/
+│       ├── auth/dependencies.py # get_current_user (valida o JWT)
+│       ├── auth/usuarios/       # POST /users/auth/register; POST /auth/login e /auth/token
+│       ├── auth/instituicoes/   # POST /institutions/auth/register (ORM)
+│       └── instituicoes/        # GET /instituicoes (fake_db, exige token)
+├── migrations/
+│   ├── env.py
+│   └── versions/                # uma migration por mudança de schema
+├── test/                        # conftest.py + test_seguranca.py (pytest)
+├── alembic.ini
+├── .env.example
+├── requirements.txt
+├── RUN.md
+└── STARTUP.md                   # este arquivo
+```
+
+## 6. Testando o fluxo
+
+```bash
+# Cadastra uma Instituição (grava em usuarios, com a senha em hash bcrypt)
+curl -X POST http://localhost:8000/api/v1/institutions/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"nome\": \"ASPAAN\", \"email\": \"contato@aspaan.org\", \"senha\": \"senha1234\", \"cidade\": \"Anápolis\", \"uf\": \"GO\"}"
+
+# Faz login
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"doador@email.com.br\", \"password\": \"senha123\"}"
+  -d "{\"email\": \"contato@aspaan.org\", \"senha\": \"senha1234\"}"
 ```
 
-Como **instituição** (mesmo contrato, outra rota):
+Respostas esperadas: cadastro `201`; login `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; `401` para senha errada, e-mail inexistente ou `tipo_usuario` diferente de `instituicao` no cadastro; `409` para e-mail já cadastrado; `422` para payload inválido (ex.: senha com menos de 8 caracteres).
+
+Com o token, acesse as rotas protegidas:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/institutions/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{\"email\": \"instituicao@email.com.br\", \"password\": \"senha123\"}"
+curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOKEN"
 ```
 
-- Credencial certa → `200` com `{"success": true, "message": "Autenticação realizada com sucesso."}`.
-- Credencial errada ou e-mail inexistente → `401` com `{"detail": "E-mail ou senha inválidos."}`.
-- E-mail mal formatado ou senha vazia → `422` (erro de validação do schema, antes mesmo de chegar no Service).
+Sem token, com token inválido ou expirado → `401`.
 
-## 4. Próximos passos:
+No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
 
-- Trocar `fake_db.py` por um banco real (ex.: PostgreSQL + SQLAlchemy). Só o `repository.py` muda.
-- Hash de senha (bcrypt/argon2) em vez de comparação em texto puro.
-- Gerar/validar um token real (JWT) em vez de só devolver uma mensagem de sucesso.
-- Introduzir os demais domínios (usuários, instituições, doações, necessidades) quando entrarem no escopo do sprint.
+A suíte automatizada fica em `test/` e roda com `python -m pytest test` (usa SQLite em memória, não precisa do PostgreSQL).
+
+## 7. Próximos passos
+
+- Migrar `modules/instituicoes` (hoje com dados mockados) para a ORM.
+- CRUD de redes sociais, necessidades e doações.

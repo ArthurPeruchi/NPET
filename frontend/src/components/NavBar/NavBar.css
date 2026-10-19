@@ -324,9 +324,38 @@
   margin: 8px 0;
 }
 
+.login-icon {
+  margin-right: 6px;
+}
+
+.navbar-item-botao {
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navbar-link--entrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  width: 72px;
+}
+
 @media (max-width: 1024px) {
+  .navbar {
+    padding-right: 0;
+  }
+  
   .navbar-link {
     min-width: 0;
+  }
+
+  .login-icon {
+    margin: 0;
   }
 
   .navbar-perfil-btn {

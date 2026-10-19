@@ -18,6 +18,7 @@ export interface Instituicao {
     animaisSobCuidado?: number;
     horarioFuncionamento?: string;
     descricao?: string;
+    principaisNecessidades?: string;
     aceitaVoluntarios?: boolean;
     aceitaDoacoes: boolean;
     redesSociais?: RedesSociais;
@@ -33,6 +34,10 @@ export interface Necessidade {
     unidade?: UnidadeMedida;
 }
 
+/* ============================================
+   |    Interfaces para doações concluídas    |
+   ============================================ */
+
 export interface Doacao {
     id: number;
     idUsuario: number;
@@ -40,11 +45,6 @@ export interface Doacao {
     tipoDoacao: TipoDoacao;
     status: StatusDoacao;
     feedback?: string;
-}
-
-export interface DadosDoacao {
-    idInstituicao: number | null;
-    tipoDoacao?: TipoDoacao;
 }
 
 export interface ItemDoacaoProduto {
@@ -87,10 +87,37 @@ export interface DoacaoProdutoParceiro extends DoacaoProdutoBase {
     formaEntrega: "compra_parceiro";
 }
 
+/* ============================================
+   |   Interfaces para doações em andamento   |
+   ============================================ */
+
+export interface DadosDoacaoBase {
+    idInstituicao: number | null;
+}
+
+export interface DadosDoacaoMonetaria extends DadosDoacaoBase {
+    tipoDoacao: "monetaria";
+    valor?: number;
+    formaPagamento?: FormaPagamento;
+    recorrente?: boolean;
+}
+
+export interface DadosDoacaoProduto extends DadosDoacaoBase {
+    tipoDoacao: "produto";
+    itens?: ItemDoacaoProduto[];
+    formaEntrega?: FormaEntrega;
+    visita?: Omit<Visita, "id" | "idDoacao">;
+}
+
+/* ============================================
+   |   Tipos e enums utilizados no projeto    |
+   ============================================ */
+
 export type TipoUsuario = "administrador" | "instituicao" | "doador";
 export type TipoDoacao = "monetaria" | "produto";
 export type StatusDoacao = "pendente" | "confirmada" | "cancelada";
 export type PrioridadeNecessidade = "alta" | "media" | "baixa";
 export type UnidadeMedida = "unidade" | "kg" | "g" | "l" | "ml" | "caixa" | "pacote" | "outro";
-export type FormaPagamento = "pix" | "cartao_credito"
+export type FormaPagamento = "pix" | "cartao_credito";
 export type FormaEntrega = "visita" | "compra_parceiro";
+export type DadosDoacao = DadosDoacaoBase | DadosDoacaoMonetaria | DadosDoacaoProduto;

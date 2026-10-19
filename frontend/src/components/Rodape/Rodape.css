@@ -70,6 +70,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .rodape-contato-item a {
@@ -157,6 +158,10 @@
     padding-left: 0;
     margin-bottom: 12px;
   }
+
+  .rodape-links, .rodape-lista-contatos, .rodape-lista-sociais {
+    padding-left: 20px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -173,6 +178,10 @@
   .rodape-cols {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+
+  .rodape-links, .rodape-lista-contatos, .rodape-lista-sociais {
+    padding: 0;
   }
  
   .rodape-col:last-child {

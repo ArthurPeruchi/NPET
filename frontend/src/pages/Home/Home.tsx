@@ -6,11 +6,12 @@ import ProvaSocial from './sections/ProvaSocial/ProvaSocial'
 import CTAFinal from './sections/CTAFinal/CTAFinal'
 import Rodape from '../../components/Rodape/Rodape'
 import DashboardInstituicao from '../DashboardInstituicao/DashBoardInstituicao'
+import { useAuth } from '../../auth/useAuth'
 
 export default function Home() {
-    const role = localStorage.getItem("role");
+    const { tipoUsuario } = useAuth();
 
-    if (role === "instituicao") {
+    if (tipoUsuario === "instituicao") {
         return (
             <DashboardInstituicao />
         )
