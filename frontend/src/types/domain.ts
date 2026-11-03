@@ -44,6 +44,7 @@ export interface Doacao {
     idInstituicao: number;
     tipoDoacao: TipoDoacao;
     status: StatusDoacao;
+    criadaEm: string;
     feedback?: string;
 }
 
@@ -71,6 +72,7 @@ export interface DoacaoMonetaria extends Doacao {
     valor: number;
     formaPagamento: FormaPagamento;
     recorrente: boolean;
+    cartaoFinal?: string;
 }
 
 export interface DoacaoProdutoBase extends Doacao {
@@ -100,6 +102,7 @@ export interface DadosDoacaoMonetaria extends DadosDoacaoBase {
     valor?: number;
     formaPagamento?: FormaPagamento;
     recorrente?: boolean;
+    cartaoFinal?: string;
 }
 
 export interface DadosDoacaoProduto extends DadosDoacaoBase {
