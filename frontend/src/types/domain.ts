@@ -113,6 +113,20 @@ export interface DadosDoacaoProduto extends DadosDoacaoBase {
 }
 
 /* ============================================
+   |  Interfaces para sessão e autenticação   |
+   ============================================ */
+
+export interface Session {
+    token: string;
+    tipoUsuario: TipoUsuario;
+}
+
+export interface TokenPayload {
+    exp?: number;
+    sub?: string;
+}
+
+/* ============================================
    |   Tipos e enums utilizados no projeto    |
    ============================================ */
 
