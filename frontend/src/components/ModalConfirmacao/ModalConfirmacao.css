@@ -1,0 +1,106 @@
+.modal-confirmacao-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-confirmacao {
+    background: var(--background-color);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 92dvh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 24px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-confirmacao-cabecalho {
+    display: grid;
+    grid-template-columns: 32px 1fr 32px;
+    align-items: center;
+    gap: 0;
+}
+
+.modal-confirmacao-titulo {
+    grid-column: 2;
+    margin: 0;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--title-text-color);
+}
+
+.modal-confirmacao-fechar {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    cursor: pointer;
+    color: var(--body-text-color);
+    transition: background 120ms ease;
+}
+
+.modal-confirmacao-fechar:hover {
+    background: var(--main-neutral-color);
+}
+
+.modal-confirmacao-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--body-text-color);
+}
+
+.modal-confirmacao-corpo p {
+    margin: 0;
+    font-size: 15px;
+}
+
+.modal-confirmacao-destaque {
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.modal-confirmacao-acoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 4px;
+}
+
+.modal-confirmacao-acoes--unica {
+    grid-template-columns: 1fr;
+}
+
+.modal-confirmacao-acoes .botao {
+    font-size: 15px;
+    padding: 11px 16px;
+}
+
+@media (max-width: 480px) {
+    .modal-confirmacao {
+        padding: 20px 18px 22px;
+    }
+
+    .modal-confirmacao-acoes {
+        grid-template-columns: 1fr;
+    }
+}
