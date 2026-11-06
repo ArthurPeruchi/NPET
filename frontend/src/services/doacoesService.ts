@@ -88,21 +88,37 @@ export async function list_donation_history(): Promise<DoacaoRegistrada[]> {
     return read_history(get_history_key());
 }
 
-// Liga ou desliga a recorrência mensal de uma doação monetária.
-export async function set_donation_recurrence(donation_id: number, recorrente: boolean): Promise<void> {
+function save_history_change(
+    donation_id: number,
+    changes: { recorrente?: boolean; feedbackVisto?: boolean }
+): void {
     const history_key = get_history_key();
     const history = read_history(history_key);
 
-    const target = history.find(d => d.id === donation_id);
-    if (!target || target.tipoDoacao !== "monetaria") {
+    if (!history.some(d => d.id === donation_id)) {
         throw new Error("Doação não encontrada.");
     }
 
-    const updated = history.map(d => (d.id === donation_id ? { ...d, recorrente } : d));
+    const updated = history.map(d => (d.id === donation_id ? { ...d, ...changes } : d));
 
     try {
         localStorage.setItem(history_key, JSON.stringify(updated));
     } catch {
         throw new Error("Não foi possível salvar a alteração. Tente novamente.");
     }
+}
+
+// Liga ou desliga a recorrência mensal de uma doação monetária.
+export async function set_donation_recurrence(donation_id: number, recorrente: boolean): Promise<void> {
+    const target = read_history(get_history_key()).find(d => d.id === donation_id);
+
+    if (!target || target.tipoDoacao !== "monetaria") {
+        throw new Error("Doação não encontrada.");
+    }
+
+    save_history_change(donation_id, { recorrente });
+}
+
+export async function mark_feedback_seen(donation_id: number): Promise<void> {
+    save_history_change(donation_id, { feedbackVisto: true });
 }
