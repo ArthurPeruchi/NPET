@@ -169,7 +169,7 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
                                     Assim que o pagamento for identificado, você receberá uma confirmação por e-mail.
                                 </p>
 
-                                <Botao variant="secundario" size="sm" fullWidth onClick={onFinish}>
+                                <Botao variant="secundario" size="md" className="botao-acoes" fullWidth onClick={onFinish}>
                                     Voltar ao Início
                                 </Botao>
                             </>
@@ -182,10 +182,10 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
                                 </p>
 
                                 <div className="popup-acoes">
-                                    <Botao variant="primario" size="md" fullWidth onClick={onConfirm}>
+                                    <Botao variant="primario" size="md" className="btn-acoes" fullWidth onClick={onConfirm}>
                                         Confirmar e Doar {valor_formatado}
                                     </Botao>
-                                    <Botao variant="secundario" size="md" fullWidth onClick={onCancel}>
+                                    <Botao variant="secundario" size="md" className="btn-acoes" fullWidth onClick={onCancel}>
                                         Cancelar
                                     </Botao>
                                 </div>
@@ -206,7 +206,7 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
                                     Você receberá uma confirmação por e-mail.
                                 </p>
 
-                                <Botao variant="primario" size="md" className="botao-voltar" fullWidth onClick={onFinish}>
+                                <Botao variant="primario" size="md" className="btn-acoes" fullWidth onClick={onFinish}>
                                     Voltar ao Início
                                 </Botao>
                             </>

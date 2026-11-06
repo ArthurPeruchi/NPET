@@ -175,8 +175,8 @@
     animation: popup-girar 800ms linear infinite;
 }
 
-.botao-voltar {
-    height: 50px;
+.btn-acoes {
+    height: 55px;
 }
 
 @keyframes popup-girar {
