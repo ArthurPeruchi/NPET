@@ -10,6 +10,7 @@ import Sair from "./auth/Sair";
 import Home from './pages/Home/Home';
 import Login from './pages/Login/Login';
 import Cadastro from './pages/Cadastro/Cadastro';
+import Historico from './pages/Historico/Historico';
 
 // Páginas protegidas
 import Doacoes from './pages/Doacoes/Doacoes';
@@ -28,6 +29,7 @@ function AppRoutes() {
 
         {/* Rotas protegidas */}
         <Route path="/doacoes" element={<RotaProtegida><Doacoes /></RotaProtegida>} />
+        <Route path="/historico" element={<RotaProtegida><Historico /></RotaProtegida>} />
 
         {/* Rota não encontrada → home */}
           <Route path="*" element={<Navigate to="/" replace />} />
