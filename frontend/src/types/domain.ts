@@ -46,6 +46,7 @@ export interface Doacao {
     status: StatusDoacao;
     criadaEm: string;
     feedback?: string;
+    feedbackVisto?: boolean;
 }
 
 export interface ItemDoacaoProduto {
@@ -138,3 +139,4 @@ export type UnidadeMedida = "unidade" | "kg" | "g" | "l" | "ml" | "caixa" | "pac
 export type FormaPagamento = "pix" | "cartao_credito";
 export type FormaEntrega = "visita" | "compra_parceiro";
 export type DadosDoacao = DadosDoacaoBase | DadosDoacaoMonetaria | DadosDoacaoProduto;
+export type DoacaoRegistrada = DoacaoMonetaria | DoacaoProdutoVisita | DoacaoProdutoParceiro;
