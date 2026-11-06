@@ -18,13 +18,17 @@ export default function Doacoes() {
     
     const instPreSelecionada: Instituicao | null = location.state?.instituicaoPreSelecionada ?? null;
 
-    const [passoAtual, setPassoAtual] = useState<1 | 2 | 3 | 4>(instPreSelecionada ? 2 : 1);
+    const doacaoRepetida: DadosDoacaoMonetaria | null = instPreSelecionada
+        ? location.state?.repetirDoacao ?? null
+        : null;
+
+    const [passoAtual, setPassoAtual] = useState<1 | 2 | 3 | 4>(doacaoRepetida ? 3 : instPreSelecionada ? 2 : 1);
 
     const [instituicaoEscolhida, setInstituicaoEscolhida] = useState<Instituicao | null>(instPreSelecionada);
 
-    const [dadosDoacao, setDadosDoacao] = useState<DadosDoacao>({
-        idInstituicao: instPreSelecionada?.id ?? null,
-    });
+    const [dadosDoacao, setDadosDoacao] = useState<DadosDoacao>(
+        doacaoRepetida ?? { idInstituicao: instPreSelecionada?.id ?? null }
+    );
 
     useScrollToTop(passoAtual);
 
