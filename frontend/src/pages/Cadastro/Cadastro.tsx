@@ -272,7 +272,7 @@ export default function Cadastro() {
                 </form>
 
                 <p className="cadastro-login">
-                    Já tem uma conta?
+                    Já tem uma conta?{" "}
                     <button
                         type="button"
                         className="cadastro-link"
