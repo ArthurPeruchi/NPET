@@ -4,6 +4,7 @@ import EtapaInstituicao from "./sections/Etapa 1/EtapaInstituicao";
 import EtapaMetodo from "./sections/Etapa 2/EtapaMetodo";
 import EtapaDetalhesMonetaria from "./sections/Etapa 3/DetalhesMonetaria/EtapaDetalhesMonetaria";
 import EtapaDetalhesProduto from "./sections/Etapa 3/DetalhesProduto/EtapaDetalhesProduto";
+import EtapaConfirmacao from "./sections/Etapa 4/EtapaConfirmacao";
 import Rodape from "../../components/Rodape/Rodape";
 import type { Instituicao, TipoDoacao, DadosDoacao, DadosDoacaoMonetaria, DadosDoacaoProduto } from "../../types/domain";
 import { useState } from "react";
@@ -19,6 +20,8 @@ export default function Doacoes() {
 
     const [passoAtual, setPassoAtual] = useState<1 | 2 | 3 | 4>(instPreSelecionada ? 2 : 1);
 
+    const [instituicaoEscolhida, setInstituicaoEscolhida] = useState<Instituicao | null>(instPreSelecionada);
+
     const [dadosDoacao, setDadosDoacao] = useState<DadosDoacao>({
         idInstituicao: instPreSelecionada?.id ?? null,
     });
@@ -26,6 +29,7 @@ export default function Doacoes() {
     useScrollToTop(passoAtual);
 
     function salvarInstituicao(inst: Instituicao) {
+        setInstituicaoEscolhida(inst);
         setDadosDoacao(d => ({ ...d, idInstituicao: inst.id }));
         setPassoAtual(2);
     }
@@ -36,7 +40,7 @@ export default function Doacoes() {
     }
 
     function salvarDetalhes(detalhes: DadosDoacaoMonetaria | DadosDoacaoProduto) {
-        setDadosDoacao(d => ({ ...d, ...detalhes }));
+        setDadosDoacao(detalhes);
         setPassoAtual(4);
     }
 
@@ -86,18 +90,19 @@ export default function Doacoes() {
 
             {passoAtual === 3 && "tipoDoacao" in dadosDoacao && (
                 dadosDoacao.tipoDoacao === "monetaria"
-                    ? <EtapaDetalhesMonetaria />
+                    ? <EtapaDetalhesMonetaria dados={dadosDoacao} onAvancar={salvarDetalhes} />
                     : <EtapaDetalhesProduto />
             )}
 
-            {/* passoAtual === 3 && "tipoDoacao" in dadosDoacao && (
-                dadosDoacao.tipoDoacao === "monetaria"
-                    ? <EtapaDetalhesMonetaria dados={dadosDoacao} onAvancar={salvarDetalhes} />
+            {/* 
                     : <EtapaDetalhesProduto   dados={dadosDoacao} onAvancar={salvarDetalhes} />
-            ) */}
+            */}
             
 
-            {/* passoAtual === 4 && <EtapaConfirmacao ... /> */}
+            {passoAtual === 4 && instituicaoEscolhida && "tipoDoacao" in dadosDoacao
+                && dadosDoacao.tipoDoacao === "monetaria" && (
+                <EtapaConfirmacao dados={dadosDoacao} instituicao={instituicaoEscolhida} />
+            )}
 
             <Rodape />
         </>
