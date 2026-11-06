@@ -9,6 +9,7 @@ import type { DadosDoacaoMonetaria, Instituicao } from "../../../../types/domain
 import "./EtapaConfirmacao.css";
 import { IconePix, IconeCartaoCredito } from "../../../../components/IconePagamento/IconePagamento";
 import { format_currency } from "../../../../utils/moeda";
+import { ROTULO_FORMA_PAGAMENTO } from "../../../Historico/rotulos";
 
 type EtapaConfirmacaoProps = {
     dados: DadosDoacaoMonetaria;
@@ -16,11 +17,6 @@ type EtapaConfirmacaoProps = {
 };
 
 type FaseConfirmacao = "formulario" | FasePopUp;
-
-const ROTULO_FORMA_PAGAMENTO = {
-    pix: "PIX",
-    cartao_credito: "Cartão de Crédito",
-} as const;
 
 const IconeInformacao = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#1a6e54" viewBox="0 0 256 256">
