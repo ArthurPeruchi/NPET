@@ -122,6 +122,8 @@ class Instituicao(Base):
     descricao: Mapped[str | None] = mapped_column(String(500))
     hora_abertura: Mapped[time | None]
     hora_fechamento: Mapped[time | None]
+    # Texto livre ("Fins de semana", "Sem horário fixo"); hora_abertura/fechamento ficam como fallback.
+    horario_funcionamento: Mapped[str | None] = mapped_column(String(100))
     qtd_animais: Mapped[int | None]
     aceita_voluntarios: Mapped[bool] = mapped_column(
         Boolean, server_default=false()

@@ -4,7 +4,7 @@ Plataforma que conecta doadores a ONGs e instituições de proteção animal, fa
 
 > **"Por trás de cada doação, um focinho feliz."**
 
-> **Estado atual:** o frontend (React + TypeScript) consome uma API REST (FastAPI) com persistência em **PostgreSQL**. Entregues: cadastro de doadores e instituições, login único com token JWT, sessão com expiração no frontend, rotas protegidas e o fluxo de doação em construção (seleção de instituição, método e detalhes). A listagem de instituições é servida pelo backend, mas ainda a partir de dados mockados (`fake_db.py`).
+> **Estado atual:** o frontend (React + TypeScript) consome uma API REST (FastAPI) com persistência em **PostgreSQL**. Entregues: cadastro de doadores e instituições, login único com token JWT, sessão com expiração no frontend, rotas protegidas e o fluxo de doação em construção (seleção de instituição, método e detalhes). As instituições ficam no PostgreSQL, com dados iniciais carregados pelo seed `backend/scripts/db_seed_instituicoes.py`.
 
 ## Sobre o projeto
 
@@ -166,7 +166,7 @@ npm run preview     # pré-visualiza o build localmente
 2. A API valida a senha (bcrypt) e devolve `{"access_token", "token_type": "bearer", "tipo_usuario"}`. O token JWT carrega o id do usuário, o tipo e a validade.
 3. O `AuthProvider` guarda a sessão e encerra-a quando o token expira. O tipo do usuário vem do backend e define a experiência: instituições veem o painel; doadores, a Home e o fluxo de doação.
 4. As requisições protegidas levam `Authorization: Bearer <token>`. Se a API responder `401`, a sessão é limpa e o usuário volta ao login.
-
+ 
 No backend, a dependência `get_current_user` protege as rotas e `require_role(...)` restringe por tipo de usuário (`403`). No Swagger, use o botão **Authorize** (e-mail em `username`, senha em `password`).
 
 ## Testes
@@ -178,7 +178,7 @@ python -m pytest test       # 19 testes de segurança; usa SQLite em memória, n
 
 ## Próximos passos
 
-- Migrar a listagem de instituições dos dados mockados para o banco.
+- Tornar pública a listagem de instituições.
 - Endpoints de doação, necessidades e redes sociais (os models já existem).
 - Integração de pagamentos com a Mercado Pago API.
 - Refresh token e armazenamento da sessão mais seguro que o `localStorage`.

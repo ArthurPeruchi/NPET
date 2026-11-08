@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     JWT_SECRET_KEY: str
     JWT_EXPIRE_MINUTES: int = 30
+    # Senha dos usuários criados por scripts/db_seed_instituicoes.py (apenas desenvolvimento).
+    SEED_PASSWORD: str | None = None
 
     @property
     def is_production(self) -> bool:

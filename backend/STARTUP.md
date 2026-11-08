@@ -57,6 +57,7 @@ Teste a conexão (opcional) e crie as tabelas:
 ```bash
 python -m app.database.test_conn      # deve imprimir "OK, conectou"
 alembic upgrade head                  # aplica migrations/versions/*
+python -m scripts.db_seed_instituicoes  # (opcional) 9 instituições de exemplo; senha em SEED_PASSWORD
 ```
 
 Suba a API:
@@ -101,7 +102,7 @@ backend/
 │       ├── auth/dependencies.py # get_current_user (valida o JWT)
 │       ├── auth/usuarios/       # POST /users/auth/register; POST /auth/login e /auth/token
 │       ├── auth/instituicoes/   # POST /institutions/auth/register (ORM)
-│       └── instituicoes/        # GET /instituicoes (fake_db, exige token)
+│       └── instituicoes/        # CRUD /instituicoes (ORM, exige token)
 ├── migrations/
 │   ├── env.py
 │   └── versions/                # uma migration por mudança de schema
@@ -143,5 +144,5 @@ A suíte automatizada fica em `test/` e roda com `python -m pytest test` (usa SQ
 
 ## 7. Próximos passos
 
-- Migrar `modules/instituicoes` (hoje com dados mockados) para a ORM.
+- Tornar pública a listagem de instituições.
 - CRUD de redes sociais, necessidades e doações.

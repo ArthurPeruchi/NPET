@@ -2,10 +2,16 @@ from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import ConflictError
 from app.database.models import Instituicao
+
+# Carrega redes sociais e necessidades junto, evitando N+1 na montagem da resposta.
+_COM_RELACIONAMENTOS = (
+    selectinload(Instituicao.redes_sociais),
+    selectinload(Instituicao.necessidades),
+)
 
 
 class InstituicaoRepository:
@@ -15,6 +21,7 @@ class InstituicaoRepository:
     def list_all(self, skip: int = 0, limit: int = 100) -> Sequence[Instituicao]:
         stmt = (
             select(Instituicao)
+            .options(*_COM_RELACIONAMENTOS)
             .order_by(Instituicao.id_instituicao)
             .offset(skip)
             .limit(limit)
@@ -22,10 +29,14 @@ class InstituicaoRepository:
         return self._db.scalars(stmt).all()
 
     def get_by_id(self, id_instituicao: int) -> Instituicao | None:
-        return self._db.get(Instituicao, id_instituicao)
+        return self._db.get(Instituicao, id_instituicao, options=_COM_RELACIONAMENTOS)
 
     def get_by_user_id(self, id_usuario: int) -> Instituicao | None:
-        stmt = select(Instituicao).where(Instituicao.id_usuario == id_usuario)
+        stmt = (
+            select(Instituicao)
+            .options(*_COM_RELACIONAMENTOS)
+            .where(Instituicao.id_usuario == id_usuario)
+        )
         return self._db.scalar(stmt)
 
     def cnpj_exists(self, cnpj: str) -> bool:

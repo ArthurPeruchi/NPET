@@ -2,7 +2,7 @@
 
 Backend da aplicação **NPET** — plataforma que conecta doadores a ONGs e instituições de proteção animal.
 
-> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro e login de usuários e de instituições (`/users/auth/*` e `/institutions/auth/*`), com senha em bcrypt e token JWT; as rotas de `/instituicoes` exigem o token. A listagem de instituições (`/instituicoes`) segue servida por dados mockados (`fake_db.py`).
+> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro e login de usuários e de instituições (`/users/auth/*` e `/institutions/auth/*`), com senha em bcrypt e token JWT; as rotas de `/instituicoes` exigem o token. As instituições ficam no banco (com redes sociais e necessidades); os dados iniciais vêm do seed `scripts/db_seed_instituicoes.py`.
 
 ## Stack
 
@@ -33,7 +33,7 @@ HTTP → Router (Controller) → Service (regra) → Repository (dados) → Post
 |---|---|---|
 | Login (todos os tipos) | `POST /api/v1/auth/login` · `POST /api/v1/auth/token` (formulário OAuth2) | `app/modules/auth/usuarios/` |
 | Cadastro de usuário | `POST /api/v1/users/auth/register` | `app/modules/auth/usuarios/` |
-| Instituições (listagem, mock) | `GET /api/v1/instituicoes` · `GET /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
+| Instituições (CRUD, ORM) | `GET/POST /api/v1/instituicoes` · `GET /api/v1/instituicoes/me` · `GET/PATCH/DELETE /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
 | Cadastro de instituição (usuário + perfil em `instituicoes`) | `POST /api/v1/institutions/auth/register` | `app/modules/auth/instituicoes/` |
 
 ## Estrutura de diretórios
@@ -58,10 +58,12 @@ backend/
 │       │   ├── dependencies.py  # get_current_user (valida o JWT das rotas protegidas)
 │       │   ├── usuarios/        # register + login único /auth/login e /auth/token (ORM)
 │       │   └── instituicoes/    # register de instituição (ORM, tabela usuarios)
-│       └── instituicoes/        # listagem de instituições (fake_db, exige token)
+│       └── instituicoes/        # CRUD de instituições (ORM, exige token)
 │           ├── repository.py
+│           ├── schemas.py
 │           ├── service.py
 │           └── router.py
+├── scripts/                     # db_create_admin.py, db_seed_instituicoes.py
 ├── migrations/                  # Alembic (env.py + versions/)
 ├── test/                        # testes de segurança (pytest)
 ├── alembic.ini
@@ -81,8 +83,11 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env              # e ajuste DATABASE_URL e JWT_SECRET_KEY
 alembic upgrade head                # cria/atualiza as tabelas
+python -m scripts.db_seed_instituicoes   # (opcional) popula as 9 instituições de exemplo
 uvicorn app.main:app --reload
 ```
+
+O seed é idempotente (pode rodar de novo sem duplicar) e não roda com `APP_ENV=production`. Cada instituição ganha um usuário `<slug>@seed.npet.example.com` (ex.: `aspaan@seed.npet.example.com`) com a senha definida em `SEED_PASSWORD`.
 
 A API sobe em `http://localhost:8000`.
 
@@ -100,6 +105,7 @@ A API sobe em `http://localhost:8000`.
 | `JWT_SECRET_KEY` | **sim** | `python -c "import secrets; print(secrets.token_hex(32))"` | Chave que assina os tokens |
 | `JWT_EXPIRE_MINUTES` | não | `30` | Validade do token |
 | `DEBUG` | não | `true` | Com `true`, o SQLAlchemy loga todo SQL executado |
+| `SEED_PASSWORD` | não | `senha-dev-123` | Senha dos usuários criados pelo seed (se vazia, o script pede no terminal) |
 
 ### Comandos do Alembic
 
@@ -145,8 +151,8 @@ A suíte usa SQLite em memória; não precisa do PostgreSQL.
 
 ## Próximos passos
 
-- Migrar `modules/instituicoes` (hoje com dados mockados) para a ORM.
-- CRUD de redes sociais, necessidades e doações (models já existem).
+- Tornar pública a listagem de instituições (`GET /instituicoes` e `GET /instituicoes/{id}`).
+- CRUD de redes sociais, necessidades e doações (models já existem; hoje redes e necessidades só entram pelo seed).
 
 ## Documentação adicional
 
