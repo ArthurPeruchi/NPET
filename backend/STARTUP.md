@@ -2,7 +2,7 @@
 
 Este documento explica, de forma simples, o que existe hoje no backend do NPET, por quê, e como um novo desenvolvedor sobe o ambiente do zero.
 
-> **Estado atual:** os dados ficam em **PostgreSQL**, acessado pela ORM do **SQLAlchemy 2.0**; o schema do banco é versionado com **Alembic**. Entregues: cadastro/login de usuários (senha com hash bcrypt) com token JWT; as rotas de `/instituicoes` exigem o token. O cadastro de instituições (`/institutions/auth/register`) cria, na mesma transação, o registro em `usuarios` (com `tipo_usuario = instituicao`) e o perfil em `instituicoes` (nome, cidade, UF e CNPJ opcional). A listagem de instituições (`/instituicoes`) ainda usa dados mockados (`modules/instituicoes/fake_db.py`), mas dessa vez, é requisitado no backend.
+> **Estado atual:** os dados ficam em **PostgreSQL**, acessado pela ORM do **SQLAlchemy 2.0**; o schema do banco é versionado com **Alembic**. Entregues: cadastro/login de usuários (senha com hash bcrypt) com token JWT; a leitura de `/instituicoes` (listagem e detalhe) é pública; criar, editar, excluir e `/instituicoes/me` exigem o token. O cadastro de instituições (`/institutions/auth/register`) cria, na mesma transação, o registro em `usuarios` (com `tipo_usuario = instituicao`) e o perfil em `instituicoes` (nome, cidade, UF e CNPJ opcional). As instituições ficam no banco, com dados iniciais carregados por `scripts/db_seed_instituicoes.py`.
 
 ---
 
@@ -102,7 +102,7 @@ backend/
 │       ├── auth/dependencies.py # get_current_user (valida o JWT)
 │       ├── auth/usuarios/       # POST /users/auth/register; POST /auth/login e /auth/token
 │       ├── auth/instituicoes/   # POST /institutions/auth/register (ORM)
-│       └── instituicoes/        # CRUD /instituicoes (ORM, exige token)
+│       └── instituicoes/        # CRUD /instituicoes (ORM; leitura pública, escrita exige token)
 ├── migrations/
 │   ├── env.py
 │   └── versions/                # uma migration por mudança de schema
@@ -133,7 +133,7 @@ Respostas esperadas: cadastro `201`; login `200` com `{"access_token": "...", "t
 Com o token, acesse as rotas protegidas:
 
 ```bash
-curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOKEN"
+curl http://localhost:8000/api/v1/users/me -H "Authorization: Bearer SEU_TOKEN"
 ```
 
 Sem token, com token inválido ou expirado → `401`.
@@ -144,5 +144,4 @@ A suíte automatizada fica em `test/` e roda com `python -m pytest test` (usa SQ
 
 ## 7. Próximos passos
 
-- Tornar pública a listagem de instituições.
 - CRUD de redes sociais, necessidades e doações.

@@ -27,6 +27,13 @@ class InstituicaoService:
             raise NotFoundError("Instituição não encontrada.")
         return instituicao
 
+    def get_instituicao_publica(self, id_instituicao: int) -> Instituicao:
+        # Coerente com a listagem: instituição com a conta desativada não aparece para o público.
+        instituicao = self.get_instituicao(id_instituicao)
+        if not instituicao.usuario.ativo:
+            raise NotFoundError("Instituição não encontrada.")
+        return instituicao
+
     def get_minha_instituicao(self, current_user: Usuario) -> Instituicao:
         instituicao = self._repository.get_by_user_id(current_user.id_usuario)
         if instituicao is None:

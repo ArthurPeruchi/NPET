@@ -12,11 +12,8 @@ from app.modules.instituicoes.schemas import (
 )
 from app.modules.instituicoes.service import InstituicaoService
 
-router = APIRouter(
-    prefix="/instituicoes",
-    tags=["instituicoes"],
-    dependencies=[Depends(get_current_user)],
-)
+# Leitura (listagem e detalhe) é pública; escrita e /me exigem token na própria rota.
+router = APIRouter(prefix="/instituicoes", tags=["instituicoes"])
 
 
 def get_service(db: Session = Depends(get_db)) -> InstituicaoService:
@@ -27,7 +24,7 @@ def get_service(db: Session = Depends(get_db)) -> InstituicaoService:
     "",
     response_model=list[InstituicaoResponse],
     response_model_exclude_none=True,
-    summary="Lista as instituições",
+    summary="Lista as instituições (pública)",
 )
 def listar(
     skip: int = Query(0, ge=0),
@@ -54,10 +51,10 @@ def minha_instituicao(
     "/{instituicao_id}",
     response_model=InstituicaoResponse,
     response_model_exclude_none=True,
-    summary="Busca uma instituição pelo id",
+    summary="Busca uma instituição pelo id (pública)",
 )
 def buscar_por_id(instituicao_id: int, service: InstituicaoService = Depends(get_service)):
-    return InstituicaoResponse.from_model(service.get_instituicao(instituicao_id))
+    return InstituicaoResponse.from_model(service.get_instituicao_publica(instituicao_id))
 
 
 @router.post(

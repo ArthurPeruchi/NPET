@@ -178,7 +178,6 @@ python -m pytest test       # 19 testes de segurança; usa SQLite em memória, n
 
 ## Próximos passos
 
-- Tornar pública a listagem de instituições.
 - Endpoints de doação, necessidades e redes sociais (os models já existem).
 - Integração de pagamentos com a Mercado Pago API.
 - Refresh token e armazenamento da sessão mais seguro que o `localStorage`.

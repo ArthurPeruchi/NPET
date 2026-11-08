@@ -87,7 +87,7 @@ Credencial certa → `200` com `{"access_token": "...", "token_type": "bearer", 
 ## 7. Acessar rotas protegidas e rodar os testes:
 
 ```bash
-curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOKEN"
+curl http://localhost:8000/api/v1/users/me -H "Authorization: Bearer SEU_TOKEN"
 python -m pytest test
 ```
 

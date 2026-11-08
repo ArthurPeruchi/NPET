@@ -34,7 +34,7 @@ def gerar_token(sub: str, minutos: int) -> str:
 
 
 def test_sem_token_retorna_401(client):
-    assert client.get(f"{API}/instituicoes").status_code == 401
+    assert client.get(f"{API}/users/me").status_code == 401
 
 
 @pytest.mark.parametrize("token", [
@@ -42,20 +42,20 @@ def test_sem_token_retorna_401(client):
     jwt.encode({"sub": "1", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}, "outra-chave", algorithm=JWT_ALGORITHM),
 ])
 def test_token_invalido_retorna_401(client, token):
-    resposta = client.get(f"{API}/instituicoes", headers={"Authorization": f"Bearer {token}"})
+    resposta = client.get(f"{API}/users/me", headers={"Authorization": f"Bearer {token}"})
     assert resposta.status_code == 401
 
 
 def test_token_expirado_retorna_401(client):
     cadastrar_e_logar(client, "doador")
     token = gerar_token("1", minutos=-1)
-    resposta = client.get(f"{API}/instituicoes", headers={"Authorization": f"Bearer {token}"})
+    resposta = client.get(f"{API}/users/me", headers={"Authorization": f"Bearer {token}"})
     assert resposta.status_code == 401
 
 
 def test_token_de_usuario_inexistente_retorna_401(client):
     token = gerar_token("999", minutos=5)
-    resposta = client.get(f"{API}/instituicoes", headers={"Authorization": f"Bearer {token}"})
+    resposta = client.get(f"{API}/users/me", headers={"Authorization": f"Bearer {token}"})
     assert resposta.status_code == 401
 
 
