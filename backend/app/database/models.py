@@ -1,10 +1,11 @@
 import enum
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from sqlalchemy import (
     CHAR,
     Boolean,
+    DateTime,
     Enum,
     ForeignKey,
     Numeric,
@@ -97,11 +98,30 @@ class Usuario(Base):
     tipo_usuario: Mapped[TipoUsuario] = mapped_column(
         pg_enum(TipoUsuario, "tipo_usuario")
     )
+    # Conta desativada pelo próprio usuário: bloqueia login/token, mas preserva o histórico.
+    ativo: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
 
     instituicao: Mapped["Instituicao | None"] = relationship(
         back_populates="usuario", uselist=False
     )
     doacoes: Mapped[list["Doacao"]] = relationship(back_populates="usuario")
+    tokens_redefinicao: Mapped[list["TokenRedefinicaoSenha"]] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan"
+    )
+
+
+class TokenRedefinicaoSenha(Base):
+    """Token de uso único para "esqueci minha senha". Só o hash SHA-256 é gravado."""
+
+    __tablename__ = "tokens_redefinicao_senha"
+
+    id_token: Mapped[int] = mapped_column(primary_key=True)
+    id_usuario: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expira_em: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    usado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    usuario: Mapped["Usuario"] = relationship(back_populates="tokens_redefinicao")
 
 
 class Instituicao(Base):

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user, require_admin
+from app.core.dependencies import ACCESS_TOKEN_COOKIE, get_current_user, require_admin
 from app.database.database import get_db
 from app.database.models import Usuario
-from app.database.schemas import UsuarioOut, UsuarioUpdate
+from app.database.schemas import DesativarContaRequest, UsuarioOut, UsuarioUpdate
 from app.modules.usuarios.repository import UsuarioRepository
 from app.modules.usuarios.service import UsuarioService
 
@@ -37,6 +37,35 @@ def update_me(
     service: UsuarioService = Depends(get_usuario_service),
 ):
     return service.update_user(current_user.id_usuario, data, current_user)
+
+
+@users_router.post(
+    "/me/deactivate",
+    status_code=204,
+    summary="Desativa a conta do usuário logado (confirma a senha)",
+)
+def deactivate_me(
+    data: DesativarContaRequest,
+    current_user: Usuario = Depends(get_current_user),
+    service: UsuarioService = Depends(get_usuario_service),
+):
+    service.deactivate_me(current_user, data.senha)
+    response = Response(status_code=204)
+    response.delete_cookie(ACCESS_TOKEN_COOKIE)  # encerra a sessão por cookie
+    return response
+
+
+@users_router.post(
+    "/{id_usuario}/reactivate",
+    response_model=UsuarioOut,
+    summary="Reativa uma conta desativada (admin)",
+)
+def reactivate_user(
+    id_usuario: int,
+    current_user: Usuario = Depends(require_admin),
+    service: UsuarioService = Depends(get_usuario_service),
+):
+    return service.set_active(id_usuario, True, current_user)
 
 
 @users_router.delete("/me", status_code=204, summary="Exclui o usuário logado")

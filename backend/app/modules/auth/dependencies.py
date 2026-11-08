@@ -19,6 +19,8 @@ def get_current_user(token: str | None = Depends(oauth2_scheme), db: Session = D
     usuario = AuthRepository(db).get_by_id(decode_access_token(token))
     if usuario is None:
         raise UnauthorizedError("Token inválido ou expirado.")
+    if not usuario.ativo:
+        raise UnauthorizedError("Esta conta está desativada.")
 
     return usuario
 

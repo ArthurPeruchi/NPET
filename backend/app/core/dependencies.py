@@ -26,6 +26,9 @@ def get_current_user(
     usuario = db.get(Usuario, id_usuario)
     if usuario is None:
         raise UnauthorizedError("Usuário não encontrado.")
+    # Token emitido antes da desativação deixa de valer imediatamente.
+    if not usuario.ativo:
+        raise UnauthorizedError("Esta conta está desativada.")
     return usuario
 
 

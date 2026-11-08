@@ -64,9 +64,24 @@ class InstituicaoRegister(BaseModel):
 class UsuarioUpdate(BaseModel):
     nome: str | None = Field(default=None, min_length=1, max_length=45)
     email: EmailStr | None = None
-    senha: str | None = None
+    senha: Senha | None = None
+    # Obrigatória quando o próprio usuário troca a senha (não se aplica ao admin editando outro usuário).
+    senha_atual: str | None = None
     telefone: str | None = Field(default=None, max_length=20)
     cpf: CPF | None = None
+
+
+class EsqueciSenhaRequest(BaseModel):
+    email: EmailStr
+
+
+class RedefinirSenhaRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    nova_senha: Senha
+
+
+class DesativarContaRequest(BaseModel):
+    senha: str = Field(min_length=1)
 
 
 class UsuarioOut(ORMBase):
@@ -77,6 +92,7 @@ class UsuarioOut(ORMBase):
     cpf: str | None
     provider: str
     tipo_usuario: TipoUsuario
+    ativo: bool
     # senha e provider_id ficam de fora de propósito
 
 

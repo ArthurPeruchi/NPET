@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
-from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
-from app.core.security import hash_password
+from app.core.exceptions import AppError, ConflictError, ForbiddenError, NotFoundError
+from app.core.security import hash_password, verify_password
 from app.database.models import TipoUsuario, Usuario
 from app.database.schemas import UsuarioUpdate
 from app.modules.usuarios.repository import UsuarioRepository
@@ -34,6 +34,14 @@ class UsuarioService:
     ) -> Usuario:
         usuario = self.get_user(id_usuario, current_user)
         changes = data.model_dump(exclude_none=True)
+        senha_atual = changes.pop("senha_atual", None)
+
+        # Quem troca a própria senha confirma a atual; o admin editando outro usuário não precisa.
+        if "senha" in changes and current_user.id_usuario == usuario.id_usuario:
+            if not senha_atual:
+                raise AppError("Informe a senha atual para definir uma nova senha.")
+            if usuario.senha is None or not verify_password(senha_atual, usuario.senha):
+                raise AppError("Senha atual incorreta.")
 
         new_email = changes.get("email")
         if new_email and new_email != usuario.email:
@@ -51,6 +59,20 @@ class UsuarioService:
         for field, value in changes.items():
             setattr(usuario, field, value)
 
+        return self._repository.update(usuario)
+
+    def deactivate_me(self, current_user: Usuario, senha: str) -> None:
+        # 400 (e não 401) para a senha errada: o frontend trata 401 como sessão expirada.
+        if current_user.senha is None or not verify_password(senha, current_user.senha):
+            raise AppError("Senha incorreta.")
+        current_user.ativo = False
+        self._repository.update(current_user)
+
+    def set_active(self, id_usuario: int, ativo: bool, current_user: Usuario) -> Usuario:
+        usuario = self.get_user(id_usuario, current_user)
+        if usuario.id_usuario == current_user.id_usuario and not ativo:
+            raise AppError("Use a desativação da própria conta em /users/me/deactivate.")
+        usuario.ativo = ativo
         return self._repository.update(usuario)
 
     def delete_user(self, id_usuario: int, current_user: Usuario) -> None:

@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import ConflictError
-from app.database.models import Instituicao
+from app.database.models import Instituicao, Usuario
 
 # Carrega redes sociais e necessidades junto, evitando N+1 na montagem da resposta.
 _COM_RELACIONAMENTOS = (
@@ -21,6 +21,8 @@ class InstituicaoRepository:
     def list_all(self, skip: int = 0, limit: int = 100) -> Sequence[Instituicao]:
         stmt = (
             select(Instituicao)
+            .join(Instituicao.usuario)
+            .where(Usuario.ativo.is_(True))  # conta da instituição desativada sai da listagem
             .options(*_COM_RELACIONAMENTOS)
             .order_by(Instituicao.id_instituicao)
             .offset(skip)
