@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # Redefinição de senha: o link enviado aponta para FRONTEND_URL + RESET_PASSWORD_PATH.
     FRONTEND_URL: str = "http://localhost:5173"
     RESET_PASSWORD_PATH: str = "/redefinir-senha"
-    RESET_TOKEN_EXPIRE_MINUTES: int = 30
+    RESET_TOKEN_EXPIRE_MINUTES: int = 15
 
     # SMTP. Sem SMTP_HOST, o e-mail não é enviado: o conteúdo vai para o log (desenvolvimento).
     SMTP_HOST: str | None = None

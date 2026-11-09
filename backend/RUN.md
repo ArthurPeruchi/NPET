@@ -59,11 +59,11 @@ Cadastre o usuário no banco e faça login com ele:
 ```bash
 curl -X POST http://localhost:8000/api/v1/users/auth/register \
   -H "Content-Type: application/json" \
-  -d "{\"nome\": \"Doador\", \"email\": \"doador@email.com.br\", \"senha\": \"senha1234\", \"tipo_usuario\": \"doador\"}"
+  -d "{\"nome\": \"Doador\", \"email\": \"doador@email.com.br\", \"senha\": \"Senha1234\", \"tipo_usuario\": \"doador\"}"
 
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"doador@email.com.br\", \"senha\": \"senha1234\"}"
+  -d "{\"email\": \"doador@email.com.br\", \"senha\": \"Senha1234\"}"
 ```
 
 Credencial certa → `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; errada → `401`.
@@ -75,11 +75,11 @@ Cadastre a instituição e faça login com ela:
 ```bash
 curl -X POST http://localhost:8000/api/v1/institutions/auth/register \
   -H "Content-Type: application/json" \
-  -d "{\"nome\": \"ASPAAN\", \"email\": \"instituicao@email.com.br\", \"senha\": \"senha1234\", \"cidade\": \"Anápolis\", \"uf\": \"GO\"}"
+  -d "{\"nome\": \"ASPAAN\", \"email\": \"instituicao@email.com.br\", \"senha\": \"Senha1234\", \"cidade\": \"Anápolis\", \"uf\": \"GO\"}"
 
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"instituicao@email.com.br\", \"senha\": \"senha1234\"}"
+  -d "{\"email\": \"instituicao@email.com.br\", \"senha\": \"Senha1234\"}"
 ```
 
 Credencial certa → `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; errada → `401`.

@@ -22,14 +22,22 @@ CNPJ = Annotated[str, Field(pattern=r"^\d{14}$", description="14 dígitos, sem p
 UF = Annotated[str, Field(pattern=r"^[A-Z]{2}$", description="Sigla em maiúsculo, ex.: GO")]
 
 
-def _limitar_bytes_da_senha(senha: str) -> str:
+def _validar_senha(senha: str) -> str:
     # O bcrypt aceita no máximo 72 bytes; acentos ocupam mais de 1 byte em UTF-8.
     if len(senha.encode("utf-8")) > 72:
         raise ValueError("A senha deve ter no máximo 72 bytes.")
+    if not any(c.isupper() for c in senha):
+        raise ValueError("A senha deve conter ao menos uma letra maiúscula.")
+    if not any(c.islower() for c in senha):
+        raise ValueError("A senha deve conter ao menos uma letra minúscula.")
+    if not any(c.isdigit() for c in senha):
+        raise ValueError("A senha deve conter ao menos um número.")
     return senha
 
 
-Senha = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_limitar_bytes_da_senha)]
+# Vale para cadastro, troca e redefinição de senha. Login e desativação aceitam qualquer texto,
+# então contas criadas antes desta regra continuam entrando normalmente.
+Senha = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_validar_senha)]
 
 
 class ORMBase(BaseModel):

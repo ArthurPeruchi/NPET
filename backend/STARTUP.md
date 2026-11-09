@@ -90,6 +90,7 @@ backend/
 │   ├── core/
 │   │   ├── config.py            # configuração global (lê o .env)
 │   │   ├── exceptions.py        # AppError, Unauthorized/Forbidden/NotFound/Conflict
+│   │   ├── dependencies.py      # get_current_user, require_role, require_admin
 │   │   └── security.py          # bcrypt e JWT
 │   ├── database/
 │   │   ├── database.py          # engine, SessionLocal, Base, get_db()
@@ -99,7 +100,6 @@ backend/
 │   ├── api/router.py            # junta os routers
 │   ├── health/router.py         # GET /health
 │   └── modules/
-│       ├── auth/dependencies.py # get_current_user (valida o JWT)
 │       ├── auth/usuarios/       # POST /users/auth/register; POST /auth/login e /auth/token
 │       ├── auth/instituicoes/   # POST /institutions/auth/register (ORM)
 │       └── instituicoes/        # CRUD /instituicoes (ORM; leitura pública, escrita exige token)
@@ -120,15 +120,15 @@ backend/
 # Cadastra uma Instituição (grava em usuarios, com a senha em hash bcrypt)
 curl -X POST http://localhost:8000/api/v1/institutions/auth/register \
   -H "Content-Type: application/json" \
-  -d "{\"nome\": \"ASPAAN\", \"email\": \"contato@aspaan.org\", \"senha\": \"senha1234\", \"cidade\": \"Anápolis\", \"uf\": \"GO\"}"
+  -d "{\"nome\": \"ASPAAN\", \"email\": \"contato@aspaan.org\", \"senha\": \"Senha1234\", \"cidade\": \"Anápolis\", \"uf\": \"GO\"}"
 
 # Faz login
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"contato@aspaan.org\", \"senha\": \"senha1234\"}"
+  -d "{\"email\": \"contato@aspaan.org\", \"senha\": \"Senha1234\"}"
 ```
 
-Respostas esperadas: cadastro `201`; login `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; `401` para senha errada, e-mail inexistente ou `tipo_usuario` diferente de `instituicao` no cadastro; `409` para e-mail já cadastrado; `422` para payload inválido (ex.: senha com menos de 8 caracteres).
+Respostas esperadas: cadastro `201`; login `200` com `{"access_token": "...", "token_type": "bearer", "tipo_usuario": "..."}`; `401` para senha errada, e-mail inexistente ou `tipo_usuario` diferente de `instituicao` no cadastro; `409` para e-mail já cadastrado; `422` para payload inválido (ex.: senha com menos de 8 caracteres ou sem maiúscula, minúscula e número).
 
 Com o token, acesse as rotas protegidas:
 

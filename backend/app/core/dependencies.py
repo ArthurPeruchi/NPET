@@ -32,7 +32,14 @@ def get_current_user(
     return usuario
 
 
-def require_admin(current_user: Usuario = Depends(get_current_user)) -> Usuario:
-    if current_user.tipo_usuario != TipoUsuario.administrador:
-        raise ForbiddenError("Acesso restrito a administradores.")
-    return current_user
+def require_role(*roles: TipoUsuario, mensagem: str = "Acesso não permitido para este tipo de usuário."):
+
+    def dependency(usuario: Usuario = Depends(get_current_user)) -> Usuario:
+        if usuario.tipo_usuario not in roles:
+            raise ForbiddenError(mensagem)
+        return usuario
+
+    return dependency
+
+
+require_admin = require_role(TipoUsuario.administrador, mensagem="Acesso restrito a administradores.")
