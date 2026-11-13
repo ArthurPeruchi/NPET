@@ -4,21 +4,7 @@ import logoNpet from "../../assets/logoNpet.png";
 import CampoTexto from "../../components/CampoTexto/CampoTexto";
 import Botao from "../../components/Botao/Botao";
 import "./Cadastro.css";
-
-function formatarCPF(raw: string): string {
-    const d = raw.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 3) return d;
-    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-}
-
-function formatarTelefone(raw: string): string {
-    const d = raw.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 2) return d.length ? `(${d}` : "";
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
+import { format_phone, format_cpf } from "../../utils/formatacao";
 
 type FormState = {
     nome: string;
@@ -61,12 +47,12 @@ export default function Cadastro() {
     }
 
     function setCPF(raw: string) {
-        setForm(f => ({ ...f, cpf: formatarCPF(raw) }));
+        setForm(f => ({ ...f, cpf: format_cpf(raw) }));
         if (erros.cpf) setErros(e => ({ ...e, cpf: undefined }));
     }
 
     function setTelefone(raw: string) {
-        setForm(f => ({ ...f, telefone: formatarTelefone(raw) }));
+        setForm(f => ({ ...f, telefone: format_phone(raw) }));
         if (erros.telefone) setErros(e => ({ ...e, telefone: undefined }));
     }
 
