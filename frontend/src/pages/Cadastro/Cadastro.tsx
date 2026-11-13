@@ -5,6 +5,7 @@ import CampoTexto from "../../components/CampoTexto/CampoTexto";
 import Botao from "../../components/Botao/Botao";
 import "./Cadastro.css";
 import { format_phone, format_cpf } from "../../utils/formatacao";
+import { is_valid_email, validate_password } from "../../utils/validacao";
 
 type FormState = {
     nome: string;
@@ -64,13 +65,12 @@ export default function Cadastro() {
 
         if (!form.email.trim())
             novosErros.email = "E-mail é obrigatório.";
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+        else if (!is_valid_email(form.email))
             novosErros.email = "Informe um e-mail válido.";
 
-        if (!form.senha)
-            novosErros.senha = "Senha é obrigatória.";
-        else if (form.senha.length < 8)
-            novosErros.senha = "A senha deve ter no mínimo 8 caracteres.";
+        const erroSenha = validate_password(form.senha);
+        if (erroSenha)
+            novosErros.senha = erroSenha;
 
         if (!form.confirmacaoSenha)
             novosErros.confirmacaoSenha = "Confirme sua senha.";
