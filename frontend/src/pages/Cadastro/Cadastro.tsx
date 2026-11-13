@@ -208,26 +208,6 @@ export default function Cadastro() {
                         autoComplete="email"
                     />
 
-                    <CampoTexto
-                        label="Senha"
-                        variante="senha"
-                        value={form.senha}
-                        onChange={set("senha")}
-                        required
-                        erro={erros.senha}
-                        autoComplete="new-password"
-                    />
-
-                    <CampoTexto
-                        label="Confirmar Senha"
-                        variante="senha"
-                        value={form.confirmacaoSenha}
-                        onChange={set("confirmacaoSenha")}
-                        required
-                        erro={erros.confirmacaoSenha}
-                        autoComplete="new-password"
-                    />
-
                     <div className="cadastro-linha-dupla">
 
                         <CampoTexto
@@ -252,6 +232,26 @@ export default function Cadastro() {
                             autoComplete="off"
                         />
                     </div>
+
+                    <CampoTexto
+                        label="Senha"
+                        variante="senha"
+                        value={form.senha}
+                        onChange={set("senha")}
+                        required
+                        erro={erros.senha}
+                        autoComplete="new-password"
+                    />
+
+                    <CampoTexto
+                        label="Confirmar Senha"
+                        variante="senha"
+                        value={form.confirmacaoSenha}
+                        onChange={set("confirmacaoSenha")}
+                        required
+                        erro={erros.confirmacaoSenha}
+                        autoComplete="new-password"
+                    />
 
                     {erroGeral && (
                         <p className="cadastro-erro-geral" role="alert">
