@@ -6,12 +6,25 @@ import EtapaDetalhesMonetaria from "./sections/Etapa 3/DetalhesMonetaria/EtapaDe
 import EtapaDetalhesProduto from "./sections/Etapa 3/DetalhesProduto/EtapaDetalhesProduto";
 import EtapaConfirmacao from "./sections/Etapa 4/EtapaConfirmacao";
 import Rodape from "../../components/Rodape/Rodape";
+import ModalConfirmacao from "../../components/ModalConfirmacao/ModalConfirmacao";
 import type { Instituicao, TipoDoacao, DadosDoacao, DadosDoacaoMonetaria, DadosDoacaoProduto } from "../../types/domain";
-import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useBlocker, useLocation } from "react-router-dom";
 import { useScrollToTop } from "../../hooks/useScrollToTop";
 import Botao from "../../components/Botao/Botao";
 import "./Doacoes.css";
+
+// Para o pop-up de confirmação de saída da página
+const ROTULO_DESTINO: Record<string, string> = {
+    "/": "Ir para o Início",
+    "/historico": "Ir para o Histórico",
+    "/perfil": "Ir para o Perfil",
+    "/sair": "Sair da Conta",
+};
+
+function get_destination_label(pathname: string): string {
+    return ROTULO_DESTINO[pathname] ?? "Sair da Doação";
+}
 
 export default function Doacoes() {
     const location = useLocation();
@@ -29,6 +42,26 @@ export default function Doacoes() {
     const [dadosDoacao, setDadosDoacao] = useState<DadosDoacao>(
         doacaoRepetida ?? { idInstituicao: instPreSelecionada?.id ?? null }
     );
+
+    const [doacaoRegistrada, setDoacaoRegistrada] = useState(false);
+    const emAndamento = !doacaoRegistrada && passoAtual > 1;
+
+    // Barra qualquer navegação interna para outra página (links, botão voltar do navegador...).
+    const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+        emAndamento && currentLocation.pathname !== nextLocation.pathname
+    );
+
+    useEffect(() => {
+        if (!emAndamento) return;
+
+        function handle_before_unload(e: BeforeUnloadEvent) {
+            e.preventDefault();
+            e.returnValue = "";
+        }
+
+        window.addEventListener("beforeunload", handle_before_unload);
+        return () => window.removeEventListener("beforeunload", handle_before_unload);
+    }, [emAndamento]);
 
     useScrollToTop(passoAtual);
 
@@ -105,7 +138,21 @@ export default function Doacoes() {
 
             {passoAtual === 4 && instituicaoEscolhida && "tipoDoacao" in dadosDoacao
                 && dadosDoacao.tipoDoacao === "monetaria" && (
-                <EtapaConfirmacao dados={dadosDoacao} instituicao={instituicaoEscolhida} />
+                <EtapaConfirmacao dados={dadosDoacao} instituicao={instituicaoEscolhida} on_registered={() => setDoacaoRegistrada(true)} />
+            )}
+
+            {blocker.state === "blocked" && (
+                <ModalConfirmacao
+                    title="Cancelar sua Doação?"
+                    primary_label="Continuar Doação"
+                    on_primary={() => blocker.reset()}
+                    secondary_label={get_destination_label(blocker.location.pathname)}
+                    on_secondary={() => blocker.proceed()}
+                    on_dismiss={() => blocker.reset()}
+                >
+                    <p className="modal-confirmacao-destaque">Tem certeza que deseja sair?</p>
+                    <p>Todas as informações preenchidas até agora serão perdidas.</p>
+                </ModalConfirmacao>
             )}
 
             <Rodape />

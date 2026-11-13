@@ -14,6 +14,7 @@ import { ROTULO_FORMA_PAGAMENTO } from "../../../Historico/rotulos";
 type EtapaConfirmacaoProps = {
     dados: DadosDoacaoMonetaria;
     instituicao: Instituicao;
+    on_registered?: () => void;
 };
 
 type FaseConfirmacao = "formulario" | FasePopUp;
@@ -24,7 +25,7 @@ const IconeInformacao = () => (
     </svg>
 )
 
-export default function EtapaConfirmacao({ dados, instituicao }: EtapaConfirmacaoProps) {
+export default function EtapaConfirmacao({ dados, instituicao, on_registered }: EtapaConfirmacaoProps) {
     const navigate = useNavigate();
 
     const [recorrente, setRecorrente] = useState<boolean>(dados.recorrente ?? false);
@@ -52,6 +53,10 @@ export default function EtapaConfirmacao({ dados, instituicao }: EtapaConfirmaca
                 recorrente,
                 cartaoFinal: dados.cartaoFinal,
             });
+
+            // Libera a saída da página sem o pop-up perguntando se o usuário realmente quer sair
+            on_registered?.();
+
             setFase(Cartao ? "concluida" : "pix_gerado");  
         } catch (e) {
             setErro(e instanceof Error ? e.message : "Não foi possível registrar sua doação.");
