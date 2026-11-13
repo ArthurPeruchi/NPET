@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logoNpet from "../../assets/logoNpet.png";
+import logoNpet from "../../../public/logoNpet.png";
 import CampoTexto from "../../components/CampoTexto/CampoTexto";
 import Botao from "../../components/Botao/Botao";
 import "./Cadastro.css";
