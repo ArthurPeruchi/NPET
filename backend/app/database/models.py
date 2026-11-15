@@ -181,6 +181,8 @@ class Doacao(Base):
     feedback_doacao: Mapped[str | None] = mapped_column(String(300))
     feedback_visto: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Preenchida quando o pagamento é aprovado (RNE-013).
+    confirmada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     usuario: Mapped["Usuario"] = relationship(back_populates="doacoes")
     instituicao: Mapped["Instituicao"] = relationship(back_populates="doacoes")

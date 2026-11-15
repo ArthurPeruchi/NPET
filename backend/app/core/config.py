@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     MP_NOTIFICATION_URL: str | None = None  # URL pública de /pagamentos/webhook; vazia em dev
     MP_API_URL: str = "https://api.mercadopago.com"
     MP_PIX_EXPIRATION_MINUTES: int = 30
+    # Timeout e retry das chamadas ao Mercado Pago (RNF-012). O retry vale para falhas de rede,
+    # 429 e 5xx; a chave de idempotência por doação impede cobrança em dobro ao repetir a criação.
+    MP_TIMEOUT_SECONDS: float = 20.0
+    MP_CONNECT_TIMEOUT_SECONDS: float = 5.0
+    MP_MAX_RETRIES: int = 2
+    MP_RETRY_BACKOFF_SECONDS: float = 0.5
 
     @property
     def is_production(self) -> bool:

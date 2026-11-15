@@ -144,6 +144,8 @@ python -m scripts.db_seed_instituicoes
 | `MP_WEBHOOK_SECRET` | para o webhook | — | "Assinatura secreta" da seção Webhooks do painel do MP (sem ela, o webhook responde `503`) |
 | `MP_NOTIFICATION_URL` | não | `https://xxxx.ngrok.app/api/v1/pagamentos/webhook` | URL pública enviada ao MP em cada pagamento |
 | `MP_API_URL` / `MP_PIX_EXPIRATION_MINUTES` | não | `https://api.mercadopago.com` / `30` | Endereço da API e validade do QR Code PIX |
+| `MP_TIMEOUT_SECONDS` / `MP_CONNECT_TIMEOUT_SECONDS` | não | `20` / `5` | Timeout das chamadas ao Mercado Pago (RNF-012) |
+| `MP_MAX_RETRIES` / `MP_RETRY_BACKOFF_SECONDS` | não | `2` / `0.5` | Novas tentativas em falha de rede, `429` ou `5xx`, com espera exponencial (0,5 s, 1 s...). Erros `4xx` não são repetidos |
 
 ### Conta do usuário
 
@@ -158,7 +160,8 @@ Todo pagamento cai na conta Mercado Pago da NPET; a doação registra a institui
 - **Criar:** `POST /doacoes/monetarias` (só doador) com `{idInstituicao, valor, formaPagamento, recorrente}`. Valor de R$ 1,00 a R$ 10.000,00, com 2 casas. A instituição precisa existir, estar com a conta ativa e com `aceita_doacoes`.
   - **PIX:** responde `201` com `status: "pendente"` e `pix: {qrCode, expiraEm}` (o "copia e cola"; o frontend gera a imagem do QR).
   - **Cartão:** envie também `cardToken` e `paymentMethodId` (e opcionalmente `issuerId`), gerados pelo SDK JS do Mercado Pago no navegador. **Número, validade e CVV nunca chegam ao backend**; só os 4 últimos dígitos ficam guardados (`cartaoFinal`). Aprovado → `201` com `status: "confirmada"`. Recusado → `402` com o motivo (a doação fica no histórico como `cancelada`).
-  - Falha de comunicação com o Mercado Pago → `502` (doação `cancelada`).
+  - Falha de comunicação com o Mercado Pago → o backend repete a chamada (`MP_MAX_RETRIES`). A chave de idempotência por doação impede cobrança em dobro. Esgotadas as tentativas → `502`, e a doação fica no histórico como `cancelada`.
+- **Data da confirmação e aviso ao doador (RNE-013):** quando o pagamento é aprovado (na criação com cartão, pelo webhook ou pela consulta de uma doação pendente), a doação grava `confirmadaEm` e o doador recebe um e-mail com a instituição, o valor, a forma de pagamento e a data. Isso acontece uma vez só, mesmo que o Mercado Pago reenvie a notificação. O e-mail usa o SMTP da redefinição de senha; sem `SMTP_HOST`, o texto vai para o log.
 - **Confirmação do PIX:** chega pelo webhook. Além disso, `GET /doacoes/{id}` de uma doação pendente consulta o Mercado Pago antes de responder (o frontend pode consultar a cada poucos segundos).
 - **Webhook:** `POST /pagamentos/webhook` valida o header `x-signature` (HMAC-SHA256 com `MP_WEBHOOK_SECRET`; inválido → `401`) e nunca confia no corpo: busca o pagamento na API do MP e atualiza a doação. Pagamento desconhecido → `200`.
 - **Recorrência:** `recorrente` é só um lembrete (o frontend monta uma nova doação pré-preenchida e o doador confirma); não há cobrança automática.

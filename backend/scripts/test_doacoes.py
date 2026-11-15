@@ -60,6 +60,26 @@ class GatewayFalso:
         self.pagamentos[payment_id].status_detail = "accredited"
 
 
+@pytest.fixture(autouse=True)
+def sem_espera_no_retry(monkeypatch):
+    """O retry do cliente do MP espera entre tentativas; nos testes a espera é nula."""
+    import app.integrations.mercadopago as mp
+
+    esperas: list[float] = []
+    monkeypatch.setattr(mp, "_esperar", esperas.append)
+    return esperas
+
+
+@pytest.fixture
+def emails(monkeypatch) -> list[tuple[str, str, str]]:
+    """Troca o envio real de e-mail (agendado pela rota) por uma lista."""
+    import app.modules.doacoes.router as rotas
+
+    enviados: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(rotas, "send_email", lambda *args: enviados.append(args))
+    return enviados
+
+
 @pytest.fixture
 def gateway(client):
     falso = GatewayFalso()
@@ -351,3 +371,203 @@ def test_cliente_mp_sem_credencial_retorna_502():
 
     with pytest.raises(PaymentGatewayError):
         MercadoPagoGateway(access_token="").get_payment("1")
+
+
+# ---------- data da confirmação e aviso ao doador (RNE-003 / RNE-013) ----------
+
+def test_pix_pendente_nao_tem_data_de_confirmacao_nem_email(client, gateway, instituicao, doador, emails):
+    corpo = doar(client, doador, instituicao).json()
+
+    assert corpo["status"] == "pendente"
+    assert "confirmadaEm" not in corpo
+    assert emails == []
+
+
+def test_cartao_aprovado_registra_a_data_e_avisa_o_doador(client, gateway, instituicao, doador, emails):
+    antes = datetime.now(timezone.utc)
+    corpo = doar(client, doador, instituicao, **CARTAO).json()
+
+    confirmada_em = datetime.fromisoformat(corpo["confirmadaEm"])
+    if confirmada_em.tzinfo is None:
+        confirmada_em = confirmada_em.replace(tzinfo=timezone.utc)
+    assert confirmada_em >= antes - timedelta(seconds=1)
+
+    assert len(emails) == 1
+    destinatario, assunto, texto = emails[0]
+    assert destinatario == "doador@npet.org"
+    assert assunto == "Sua doação foi confirmada"
+    assert "ASPAAN" in texto and "R$ 50,00" in texto and "cartão de crédito" in texto
+
+
+def test_cartao_recusado_nao_registra_data_nem_avisa(client, gateway, instituicao, doador, emails):
+    gateway.status_cartao = ("rejected", "cc_rejected_other_reason")
+    assert doar(client, doador, instituicao, **CARTAO).status_code == 402
+    assert emails == []
+
+
+def test_webhook_confirma_uma_vez_so_mesmo_repetido(
+    client, gateway, instituicao, doador, emails, segredo_webhook
+):
+    id_doacao = doar(client, doador, instituicao).json()["id"]
+    gateway.aprovar("1001")
+
+    def notificar():
+        resposta = client.post(
+            f"{API}/pagamentos/webhook?data.id=1001&type=payment",
+            json={"type": "payment", "data": {"id": "1001"}},
+            headers=assinar("1001"),
+        )
+        assert resposta.status_code == 200
+        return client.get(f"{API}/doacoes/{id_doacao}", headers=doador).json()
+
+    primeira = notificar()
+    segunda = notificar()  # o MP reenvia notificações; nada pode mudar
+
+    assert primeira["status"] == "confirmada" and primeira["confirmadaEm"]
+    assert segunda["confirmadaEm"] == primeira["confirmadaEm"]
+    assert len(emails) == 1
+    assert "PIX" in emails[0][2]
+
+
+def test_sincronizacao_do_detalhe_tambem_registra_e_avisa(client, gateway, instituicao, doador, emails):
+    id_doacao = doar(client, doador, instituicao).json()["id"]
+    gateway.aprovar("1001")
+
+    corpo = client.get(f"{API}/doacoes/{id_doacao}", headers=doador).json()
+
+    assert corpo["status"] == "confirmada" and corpo["confirmadaEm"]
+    assert len(emails) == 1
+    historico = client.get(f"{API}/doacoes/me", headers=doador).json()
+    assert historico[0]["confirmadaEm"] == corpo["confirmadaEm"]
+
+
+def test_falha_no_envio_do_email_nao_quebra_o_webhook(
+    client, gateway, instituicao, doador, segredo_webhook, monkeypatch
+):
+    import smtplib
+
+    from app.core import email as modulo_email
+
+    # Usa o send_email real com um SMTP que falha: ele registra o erro e não propaga.
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.invalido.local")
+
+    def smtp_quebrado(*args, **kwargs):
+        raise smtplib.SMTPConnectError(421, "fora do ar")
+
+    monkeypatch.setattr(modulo_email.smtplib, "SMTP", smtp_quebrado)
+
+    id_doacao = doar(client, doador, instituicao).json()["id"]
+    gateway.aprovar("1001")
+    resposta = client.post(
+        f"{API}/pagamentos/webhook?data.id=1001&type=payment",
+        json={"type": "payment", "data": {"id": "1001"}},
+        headers=assinar("1001"),
+    )
+
+    assert resposta.status_code == 200
+    gateway.falhar = True
+    assert client.get(f"{API}/doacoes/{id_doacao}", headers=doador).json()["status"] == "confirmada"
+
+
+# ---------- timeout e retry configuráveis (RNF-012) ----------
+
+def _respostas_em_sequencia(monkeypatch, *itens):
+    """Faz o httpx.request devolver (ou levantar) cada item, em ordem; guarda as chamadas."""
+    import httpx
+
+    fila = list(itens)
+    chamadas: list[dict] = []
+
+    def falso_request(metodo, url, headers, timeout, **kwargs):
+        chamadas.append({"metodo": metodo, "headers": headers, "timeout": timeout})
+        item = fila.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    monkeypatch.setattr(httpx, "request", falso_request)
+    return chamadas
+
+
+def test_cliente_mp_repete_timeout_e_5xx_ate_conseguir(monkeypatch, sem_espera_no_retry):
+    import httpx
+    from decimal import Decimal
+    from app.integrations.mercadopago import MercadoPagoGateway
+
+    monkeypatch.setattr(settings, "MP_MAX_RETRIES", 2)
+    monkeypatch.setattr(settings, "MP_RETRY_BACKOFF_SECONDS", 0.5)
+    chamadas = _respostas_em_sequencia(
+        monkeypatch,
+        httpx.ReadTimeout("demorou"),
+        httpx.Response(503, json={}),
+        httpx.Response(201, json={"id": 9, "status": "pending"}),
+    )
+
+    pagamento = MercadoPagoGateway(access_token="TEST-1").create_pix_payment(
+        id_doacao=7, valor=Decimal("10.00"), descricao="x", email_pagador="d@npet.org",
+    )
+
+    assert pagamento.id == "9"
+    assert len(chamadas) == 3
+    # Todas as tentativas usam a mesma chave: o MP não cobra em dobro.
+    assert {c["headers"]["X-Idempotency-Key"] for c in chamadas} == {"npet-doacao-7"}
+    assert sem_espera_no_retry == [0.5, 1.0]  # espera exponencial
+
+
+def test_cliente_mp_usa_o_timeout_configurado(monkeypatch):
+    import httpx
+    from app.integrations.mercadopago import MercadoPagoGateway
+
+    monkeypatch.setattr(settings, "MP_TIMEOUT_SECONDS", 7.0)
+    monkeypatch.setattr(settings, "MP_CONNECT_TIMEOUT_SECONDS", 2.0)
+    chamadas = _respostas_em_sequencia(monkeypatch, httpx.Response(200, json={"id": 1, "status": "approved"}))
+
+    MercadoPagoGateway(access_token="TEST-1").get_payment("1")
+
+    assert chamadas[0]["timeout"] == httpx.Timeout(7.0, connect=2.0)
+
+
+def test_cliente_mp_nao_repete_erro_400(monkeypatch):
+    import httpx
+    from app.core.exceptions import UnprocessableError
+    from app.integrations.mercadopago import MercadoPagoGateway
+
+    monkeypatch.setattr(settings, "MP_MAX_RETRIES", 3)
+    chamadas = _respostas_em_sequencia(monkeypatch, httpx.Response(400, json={"message": "token usado"}))
+
+    with pytest.raises(UnprocessableError):
+        MercadoPagoGateway(access_token="TEST-1").get_payment("1")
+    assert len(chamadas) == 1
+
+
+def test_cliente_mp_desiste_apos_as_tentativas(monkeypatch):
+    import httpx
+    from app.integrations.mercadopago import MercadoPagoGateway
+
+    monkeypatch.setattr(settings, "MP_MAX_RETRIES", 1)
+    chamadas = _respostas_em_sequencia(
+        monkeypatch, httpx.ConnectError("sem rede"), httpx.ConnectError("sem rede")
+    )
+
+    with pytest.raises(PaymentGatewayError):
+        MercadoPagoGateway(access_token="TEST-1").get_payment("1")
+    assert len(chamadas) == 2
+
+
+def test_mp_fora_do_ar_apos_retries_cancela_a_doacao_sem_perder_o_registro(
+    client, instituicao, doador, monkeypatch
+):
+    """Ponta a ponta com o cliente real: as tentativas se esgotam, a rota responde 502 e a
+    doação continua no histórico como cancelada (RNF-012: sem perda de dados)."""
+    import httpx
+
+    monkeypatch.setattr(settings, "MP_ACCESS_TOKEN", "TEST-1")
+    monkeypatch.setattr(settings, "MP_MAX_RETRIES", 2)
+    chamadas = _respostas_em_sequencia(monkeypatch, *[httpx.Response(500, json={})] * 3)
+
+    resposta = doar(client, doador, instituicao)
+
+    assert resposta.status_code == 502
+    assert len(chamadas) == 3
+    historico = client.get(f"{API}/doacoes/me", headers=doador).json()
+    assert [d["status"] for d in historico] == ["cancelada"]

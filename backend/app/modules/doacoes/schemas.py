@@ -59,6 +59,7 @@ class DoacaoMonetariaResponse(CamelModel):
     tipo_doacao: Literal[TipoDoacao.monetaria] = TipoDoacao.monetaria
     status: StatusDoacao
     criada_em: datetime
+    confirmada_em: datetime | None = None  # data em que o pagamento foi aprovado (RNE-013)
     feedback: str | None = None
     feedback_visto: bool
     valor: float
@@ -84,6 +85,7 @@ class DoacaoMonetariaResponse(CamelModel):
             id_instituicao=d.id_instituicao,
             status=d.status,
             criada_em=d.criada_em,
+            confirmada_em=d.confirmada_em,
             feedback=d.feedback_doacao,
             feedback_visto=d.feedback_visto,
             valor=float(dinheiro.valor),

@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -12,7 +13,11 @@ from app.core.exceptions import PaymentGatewayError, UnprocessableError
 
 logger = logging.getLogger(__name__)
 
-_TIMEOUT = httpx.Timeout(20.0, connect=5.0)
+# Respostas transitórias que valem nova tentativa; os demais 4xx são definitivos.
+_STATUS_RETENTAVEIS = {429, 500, 502, 503, 504}
+
+# Separado para os testes trocarem por uma espera nula.
+_esperar = time.sleep
 
 
 @dataclass
@@ -102,14 +107,36 @@ class MercadoPagoGateway:
             raise PaymentGatewayError("Pagamentos indisponíveis: o Mercado Pago não está configurado.")
 
         headers = {"Authorization": f"Bearer {self._access_token}", **kwargs.pop("headers", {})}
-        try:
-            resposta = httpx.request(
-                metodo, f"{self._api_url}{caminho}", headers=headers, timeout=_TIMEOUT, **kwargs
-            )
-        except httpx.HTTPError as exc:
-            logger.error("Falha de comunicação com o Mercado Pago: %s", exc)
-            raise PaymentGatewayError("Não foi possível falar com o Mercado Pago. Tente novamente.") from exc
+        timeout = httpx.Timeout(settings.MP_TIMEOUT_SECONDS, connect=settings.MP_CONNECT_TIMEOUT_SECONDS)
+        tentativas = 1 + max(settings.MP_MAX_RETRIES, 0)
 
+        # Repetir é seguro: a criação usa X-Idempotency-Key fixo por doação e a consulta só lê.
+        for tentativa in range(1, tentativas + 1):
+            ultima = tentativa == tentativas
+            try:
+                resposta = httpx.request(
+                    metodo, f"{self._api_url}{caminho}", headers=headers, timeout=timeout, **kwargs
+                )
+            except httpx.HTTPError as exc:
+                logger.warning(
+                    "Falha de comunicação com o Mercado Pago (tentativa %s/%s): %s", tentativa, tentativas, exc
+                )
+                if ultima:
+                    raise PaymentGatewayError(
+                        "Não foi possível falar com o Mercado Pago. Tente novamente."
+                    ) from exc
+            else:
+                if resposta.status_code not in _STATUS_RETENTAVEIS or ultima:
+                    return self._tratar_resposta(resposta)
+                logger.warning(
+                    "Mercado Pago respondeu %s (tentativa %s/%s)", resposta.status_code, tentativa, tentativas
+                )
+            _esperar(settings.MP_RETRY_BACKOFF_SECONDS * 2 ** (tentativa - 1))
+
+        raise AssertionError("inalcançável")  # o laço sempre retorna ou levanta na última tentativa
+
+    @staticmethod
+    def _tratar_resposta(resposta: httpx.Response) -> dict:
         if resposta.status_code == 400:
             # Ex.: card_token expirado/já usado ou dado inválido no pagamento.
             logger.warning("Mercado Pago recusou a requisição (400): %s", resposta.text)

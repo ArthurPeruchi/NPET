@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, require_role
+from app.core.email import send_email
 from app.database.database import get_db
 from app.database.models import TipoUsuario, Usuario
 from app.integrations.mercadopago import MercadoPagoGateway, get_payment_gateway
@@ -20,10 +21,15 @@ require_doador = require_role(TipoUsuario.doador, mensagem="Apenas doadores pode
 
 
 def get_service(
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     gateway: MercadoPagoGateway = Depends(get_payment_gateway),
 ) -> DoacaoService:
-    return DoacaoService(DoacaoRepository(db), InstituicaoRepository(db), gateway)
+    # O e-mail de confirmação ao doador sai depois da resposta, sem atrasar o webhook.
+    def agendar_email(destinatario: str, assunto: str, corpo: str) -> None:
+        background.add_task(send_email, destinatario, assunto, corpo)
+
+    return DoacaoService(DoacaoRepository(db), InstituicaoRepository(db), gateway, agendar_email)
 
 
 @router.post(

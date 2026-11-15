@@ -1,5 +1,6 @@
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from datetime import datetime, timedelta, timezone
 
 from app.core.exceptions import (
     AppError,
@@ -51,8 +52,20 @@ _MOTIVOS_RECUSA = {
 _MOTIVO_PADRAO = "Pagamento recusado pelo emissor do cartão. Tente outro cartão ou o PIX."
 
 
-def aplicar_pagamento(doacao: Doacao, pagamento: PagamentoMP) -> None:
-    """Copia o estado do pagamento do MP para a doação (idempotente)."""
+# Agenda o envio de um e-mail (destinatário, assunto, corpo); a rota usa BackgroundTasks.
+AgendarEmail = Callable[[str, str, str], None]
+
+_HORARIO_DE_BRASILIA = timezone(timedelta(hours=-3))  # sem horário de verão desde 2019
+
+_NOME_FORMA = {FormaPagamento.pix: "PIX", FormaPagamento.cartao_credito: "cartão de crédito"}
+
+
+def aplicar_pagamento(doacao: Doacao, pagamento: PagamentoMP) -> bool:
+    """Copia o estado do pagamento do MP para a doação (idempotente).
+
+    Devolve True só na primeira vez em que a doação passa a "confirmada": é aí que a data da
+    confirmação é registrada e o doador deve ser avisado (RNE-013).
+    """
     dinheiro = doacao.dinheiro
     dinheiro.mp_payment_id = pagamento.id
     dinheiro.mp_status = pagamento.status
@@ -65,6 +78,33 @@ def aplicar_pagamento(doacao: Doacao, pagamento: PagamentoMP) -> None:
         dinheiro.cartao_final = pagamento.cartao_final
     doacao.status = _STATUS_MP.get(pagamento.status, StatusDoacao.pendente)
 
+    if doacao.status == StatusDoacao.confirmada and doacao.confirmada_em is None:
+        doacao.confirmada_em = datetime.now(timezone.utc)
+        return True
+    return False
+
+
+def email_de_confirmacao(doacao: Doacao) -> tuple[str, str, str]:
+    """Monta (destinatário, assunto, corpo) do aviso ao doador de que a doação foi confirmada."""
+    dinheiro = doacao.dinheiro
+    valor = f"R$ {dinheiro.valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    confirmada_em = doacao.confirmada_em
+    if confirmada_em.tzinfo is None:  # SQLite devolve sem fuso; o valor gravado é UTC
+        confirmada_em = confirmada_em.replace(tzinfo=timezone.utc)
+    data = confirmada_em.astimezone(_HORARIO_DE_BRASILIA).strftime("%d/%m/%Y às %H:%M")
+    forma = _NOME_FORMA.get(dinheiro.forma_pagamento, dinheiro.forma_pagamento.value)
+    corpo = (
+        f"Olá, {doacao.usuario.nome}!\n\n"
+        f"Sua doação para {doacao.instituicao.nome} foi confirmada.\n\n"
+        f"Valor: {valor}\n"
+        f"Forma de pagamento: {forma}\n"
+        f"Confirmada em: {data} (horário de Brasília)\n\n"
+        "Você pode acompanhar suas contribuições no histórico de doações do NPET.\n"
+        "Obrigado por apoiar a causa animal!\n\n"
+        "Equipe NPET"
+    )
+    return doacao.usuario.email, "Sua doação foi confirmada", corpo
+
 
 class DoacaoService:
     def __init__(
@@ -72,10 +112,20 @@ class DoacaoService:
         repository: DoacaoRepository,
         instituicoes: InstituicaoRepository,
         gateway: MercadoPagoGateway,
+        agendar_email: AgendarEmail | None = None,
     ) -> None:
         self._repository = repository
         self._instituicoes = instituicoes
         self._gateway = gateway
+        self._agendar_email = agendar_email
+
+    def _aplicar_e_salvar(self, doacao: Doacao, pagamento: PagamentoMP) -> Doacao:
+        confirmou_agora = aplicar_pagamento(doacao, pagamento)
+        doacao = self._repository.save(doacao)
+        if confirmou_agora and self._agendar_email:
+            # O texto é montado agora, com a sessão aberta; o envio roda depois da resposta.
+            self._agendar_email(*email_de_confirmacao(doacao))
+        return doacao
 
     # ---------- criação ----------
 
@@ -127,8 +177,7 @@ class DoacaoService:
             self._repository.save(doacao)
             raise
 
-        aplicar_pagamento(doacao, pagamento)
-        self._repository.save(doacao)
+        doacao = self._aplicar_e_salvar(doacao, pagamento)
 
         if data.forma_pagamento == FormaPagamento.cartao_credito and doacao.status == StatusDoacao.cancelada:
             raise PaymentRequiredError(_MOTIVOS_RECUSA.get(pagamento.status_detail or "", _MOTIVO_PADRAO))
@@ -164,8 +213,7 @@ class DoacaoService:
             # Sem resposta do MP, devolve o último estado conhecido; o webhook corrige depois.
             logger.warning("Não foi possível sincronizar a doação %s: %s", doacao.id_doacao, exc.message)
             return
-        aplicar_pagamento(doacao, pagamento)
-        self._repository.save(doacao)
+        self._aplicar_e_salvar(doacao, pagamento)
 
     # ---------- alterações do doador ----------
 
@@ -196,5 +244,4 @@ class DoacaoService:
             logger.info("Webhook do MP para pagamento desconhecido: %s", mp_payment_id)
             return None
 
-        aplicar_pagamento(doacao, pagamento)
-        return self._repository.save(doacao)
+        return self._aplicar_e_salvar(doacao, pagamento)
