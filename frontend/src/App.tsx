@@ -14,6 +14,7 @@ import Cadastro from './pages/Cadastro/Cadastro';
 // Páginas protegidas
 import Doacoes from './pages/Doacoes/Doacoes';
 import Historico from './pages/Historico/Historico';
+import Perfil from './pages/Perfil/Perfil';
 
 function RootLayout() {
   useScrollToTop();
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
       // Rotas protegidas
       { path: "/doacoes", element: <RotaProtegida><Doacoes /></RotaProtegida> },
       { path: "/historico", element: <RotaProtegida><Historico /></RotaProtegida> },
+      { path: "/perfil", element: <RotaProtegida><Perfil /></RotaProtegida> },
 
       // Rota não encontrada → home
       { path: "*", element: <Navigate to="/" replace /> },

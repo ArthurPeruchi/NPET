@@ -8,6 +8,7 @@ const MAPA_SITE = [
   { label: 'Instituições Parceiras',href: '/parcerias' },
   { label: 'Nossas Avaliações',     href: '/avaliacoes' },
   { label: 'Suporte',               href: '/suporte' },
+  { label: 'Perfil',                href: '/perfil' },
 ];
  
 const CONTATO = [
