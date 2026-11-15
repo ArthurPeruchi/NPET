@@ -28,34 +28,16 @@ type ConfigCampo = {
     placeholder: string;
     autocomplete: string;
     formatar?: (raw: string) => string;
-    editavel: boolean;
 };
 
 const CAMPOS: ConfigCampo[] = [
-    { chave: "nome", label: "Nome Completo", variante: "texto", placeholder: "Seu nome", autocomplete: "name", editavel: true },
-    { chave: "email", label: "E-mail de Usuário", variante: "email", placeholder: "usuario@dominio.com", autocomplete: "email", editavel: true },
-    { chave: "telefone", label: "Telefone", variante: "texto", placeholder: "(XX) XXXXX-XXXX", autocomplete: "tel", formatar: format_phone, editavel: true },
-    { chave: "cpf", label: "CPF", variante: "texto", placeholder: "XXX.XXX.XXX-XX", autocomplete: "off", formatar: format_cpf, editavel: true },
+    { chave: "nome", label: "Nome Completo", variante: "texto", placeholder: "Seu nome", autocomplete: "name" },
+    { chave: "email", label: "E-mail de Usuário", variante: "email", placeholder: "usuario@dominio.com", autocomplete: "email" },
+    { chave: "telefone", label: "Telefone", variante: "texto", placeholder: "(XX) XXXXX-XXXX", autocomplete: "tel", formatar: format_phone },
+    { chave: "cpf", label: "CPF", variante: "texto", placeholder: "XXX.XXX.XXX-XX", autocomplete: "off", formatar: format_cpf },
 ];
 
 const SENHA_VAZIA: DadosSenha = { atual: "", nova: "", confirmacao: "" };
-const SENHA_OCULTA = "••••••••";
-
-function IconeEditar() {
-    return (
-        <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
-            <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z" />
-        </svg>
-    );
-}
-
-function IconeCancelar() {
-    return (
-        <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
-            <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
-        </svg>
-    );
-}
 
 function to_dados_perfil(perfil: PerfilUsuario): DadosPerfil {
     return {
@@ -141,25 +123,9 @@ export default function Perfil() {
 
     const salvo = useMemo(() => (perfil ? to_dados_perfil(perfil) : null), [perfil]);
 
-    const campos_editados = (Object.keys(rascunho) as CampoPerfil[]);
     const campos_alterados = salvo
-        ? campos_editados.filter(c => (rascunho[c] ?? "").trim() !== salvo[c])
+        ? (Object.keys(rascunho) as CampoPerfil[]).filter(c => (rascunho[c] ?? "").trim() !== salvo[c])
         : [];
-
-    function handle_start_edit(campo: CampoPerfil) {
-        if (!salvo) return;
-        setMensagem(null);
-        setRascunho(r => ({ ...r, [campo]: salvo[campo] }));
-    }
-
-    function handle_cancel_edit(campo: CampoPerfil) {
-        setRascunho(r => {
-            const restante = { ...r };
-            delete restante[campo];
-            return restante;
-        });
-        setErros(e => ({ ...e, [campo]: undefined }));
-    }
 
     function handle_discard_all() {
         setRascunho({});
@@ -169,12 +135,13 @@ export default function Perfil() {
 
     function handle_change(config: ConfigCampo, raw: string) {
         const valor = config.formatar ? config.formatar(raw) : raw;
+        setMensagem(null);
         setRascunho(r => ({ ...r, [config.chave]: valor }));
         if (erros[config.chave]) setErros(e => ({ ...e, [config.chave]: undefined }));
     }
 
-    async function handle_save(e: React.FormEvent) {
-        e.preventDefault();
+    async function handle_save(e?: React.FormEvent) {
+        e?.preventDefault();
         if (!salvo || salvando || campos_alterados.length === 0) return;
 
         setErroGeral(null);
@@ -276,11 +243,11 @@ export default function Perfil() {
         }
     }
 
-    return (
+        return (
         <>
             <NavBar />
 
-            <main className="perfil">
+            <main className={`perfil ${campos_alterados.length > 0 ? "perfil--com-barra" : ""}`}>
                 <h2>Meu Perfil</h2>
                 <p className="perfil-subtitulo">Consulte e atualize seus dados cadastrais.</p>
 
@@ -294,73 +261,29 @@ export default function Perfil() {
                         {mensagem && <p className="perfil-mensagem" role="status">{mensagem}</p>}
 
                         <form className="perfil-form" onSubmit={handle_save} noValidate aria-label="Dados cadastrais">
-                            {CAMPOS.map(campo => {
-                                const editando = rascunho[campo.chave] !== undefined;
-
-                                return (
-                                    <div className="perfil-campo" key={campo.chave}>
-                                        <CampoTexto
-                                            label={campo.label}
-                                            variante={editando ? campo.variante : "exibicao"}
-                                            placeholder={editando ? campo.placeholder : "Não informado"}
-                                            value={editando ? rascunho[campo.chave] : salvo[campo.chave]}
-                                            onChange={valor => handle_change(campo, valor)}
-                                            erro={erros[campo.chave]}
-                                            autoComplete={campo.autocomplete}
-                                            disabled={salvando}
-                                        />
-
-                                        {campo.editavel && (
-                                            <button
-                                                type="button"
-                                                className={`perfil-editar ${editando ? "perfil-editar--ativo" : ""}`}
-                                                onClick={() => (editando ? handle_cancel_edit(campo.chave) : handle_start_edit(campo.chave))}
-                                                aria-label={`${editando ? "Cancelar edição de" : "Editar"} ${campo.label.toLowerCase()}`}
-                                                aria-pressed={editando}
-                                                disabled={salvando}
-                                            >
-                                                {editando ? <IconeCancelar /> : <IconeEditar />}
-                                            </button>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                            {CAMPOS.map(campo => (
+                                <CampoTexto
+                                    key={campo.chave}
+                                    label={campo.label}
+                                    variante={campo.variante}
+                                    placeholder={campo.placeholder}
+                                    value={rascunho[campo.chave] ?? salvo[campo.chave]}
+                                    onChange={valor => handle_change(campo, valor)}
+                                    erro={erros[campo.chave]}
+                                    autoComplete={campo.autocomplete}
+                                    disabled={salvando}
+                                />
+                            ))}
 
                             {erro_geral && <p className="perfil-erro-geral" role="alert">{erro_geral}</p>}
-
-                            {campos_editados.length > 0 && (
-                                <div className="perfil-acoes">
-                                    <Botao variant="secundario" size="md" fullWidth onClick={handle_discard_all} disabled={salvando}>
-                                        Descartar
-                                    </Botao>
-                                    <Botao
-                                        variant="primario"
-                                        size="md"
-                                        fullWidth
-                                        type="submit"
-                                        disabled={salvando || campos_alterados.length === 0}
-                                    >
-                                        {salvando ? "Salvando..." : "Salvar Alterações"}
-                                    </Botao>
-                                </div>
-                            )}
                         </form>
 
                         <section className="perfil-secao" aria-label="Senha">
-                            <div className="perfil-campo">
-                                <CampoTexto label="Senha" variante="exibicao" value={SENHA_OCULTA} />
-
-                                <button
-                                    type="button"
-                                    className={`perfil-editar ${senha_aberta ? "perfil-editar--ativo" : ""}`}
-                                    onClick={handle_toggle_password}
-                                    aria-label={senha_aberta ? "Cancelar alteração de senha" : "Alterar senha"}
-                                    aria-expanded={senha_aberta}
-                                    disabled={salvando_senha}
-                                >
-                                    {senha_aberta ? <IconeCancelar /> : <IconeEditar />}
-                                </button>
-                            </div>
+                            {!senha_aberta && (
+                                <Botao variant="secundario" className="botao-acoes" size="md" fullWidth onClick={handle_toggle_password}>
+                                    Editar Senha
+                                </Botao>
+                            )}
 
                             {senha_aberta && (
                                 <form className="perfil-senha-painel" onSubmit={handle_save_password} noValidate aria-label="Alterar senha">
@@ -394,11 +317,11 @@ export default function Perfil() {
 
                                     {erro_senha_geral && <p className="perfil-erro-geral" role="alert">{erro_senha_geral}</p>}
 
-                                    <div className="perfil-acoes">
-                                        <Botao variant="secundario" size="md" fullWidth onClick={handle_toggle_password} disabled={salvando_senha}>
+                                    <div className="perfil-acoes perfil-acoes--painel">
+                                        <Botao variant="secundario" size="md" className="botao-acoes" fullWidth onClick={handle_toggle_password} disabled={salvando_senha}>
                                             Cancelar
                                         </Botao>
-                                        <Botao variant="primario" size="md" fullWidth type="submit" disabled={salvando_senha}>
+                                        <Botao variant="primario" size="md" className="botao-acoes" fullWidth type="submit" disabled={salvando_senha}>
                                             {salvando_senha ? "Salvando..." : "Atualizar Senha"}
                                         </Botao>
                                     </div>
@@ -406,15 +329,40 @@ export default function Perfil() {
                             )}
                         </section>
 
-                        <section className="perfil-secao perfil-zona-risco" aria-label="Desativar conta">
-                            <div>
-                                <h3>Desativar conta</h3>
-                                <p>Sua conta ficará inativa e você será desconectado.</p>
+                        <section className="perfil-zona-risco" aria-labelledby="perfil-zona-risco-titulo">
+                            <h3 id="perfil-zona-risco-titulo">Zona de Perigo</h3>
+
+                            <div className="perfil-zona-risco-item">
+                                <div>
+                                    <strong>Desativar esta conta</strong>
+                                    <p>Sua conta ficará inativa e você será desconectado.</p>
+                                </div>
+                                <Botao variant="secundario" size="md" className="perfil-botao-perigo" onClick={handle_open_deactivate}>
+                                    Desativar Conta
+                                </Botao>
                             </div>
-                            <Botao variant="secundario" size="md" className="perfil-botao-perigo" onClick={handle_open_deactivate}>
-                                Desativar Conta
-                            </Botao>
                         </section>
+                    </div>
+                )}
+
+                {perfil && salvo && campos_alterados.length > 0 && (
+                    <div className="perfil-barra-alteracoes" role="region" aria-label="Alterações pendentes">
+                        <span className="perfil-barra-texto">Você tem alterações não salvas.</span>
+                        <div className="perfil-barra-botoes">
+                            <Botao variant="secundario" className="botao-acoes" size="md" fullWidth onClick={handle_discard_all} disabled={salvando}>
+                                Descartar
+                            </Botao>
+                            <Botao
+                                variant="primario"
+                                className="botao-acoes"
+                                size="md"
+                                fullWidth
+                                onClick={() => void handle_save()}
+                                disabled={salvando}
+                            >
+                                {salvando ? "Salvando..." : "Salvar Alterações"}
+                            </Botao>
+                        </div>
                     </div>
                 )}
             </main>
