@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     SMTP_FROM: str = "NPET <nao-responda@npet.com.br>"
     SMTP_STARTTLS: bool = True
 
+    # Mercado Pago (todas as doações caem na conta da NPET). Use credenciais TEST-... no sandbox.
+    MP_ACCESS_TOKEN: str | None = None
+    MP_WEBHOOK_SECRET: str | None = None
+    MP_NOTIFICATION_URL: str | None = None  # URL pública de /pagamentos/webhook; vazia em dev
+    MP_API_URL: str = "https://api.mercadopago.com"
+    MP_PIX_EXPIRATION_MINUTES: int = 30
+
     @property
     def is_production(self) -> bool:
         return self.APP_ENV.lower() == "production"
