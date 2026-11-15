@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
-import logoNpet from "../../assets/logoNpet.png";
+import logoNpet from "../../../public/logoNpet.png";
 import Botao from "../../components/Botao/Botao";
 import CampoTexto from "../../components/CampoTexto/CampoTexto";
 import "./Login.css";

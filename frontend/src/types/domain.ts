@@ -1,3 +1,7 @@
+/* ============================================
+   |       Interfaces para instituições       |
+   ============================================ */
+
 export interface RedesSociais {
     facebook?: string;
     instagram?: string;
@@ -44,7 +48,9 @@ export interface Doacao {
     idInstituicao: number;
     tipoDoacao: TipoDoacao;
     status: StatusDoacao;
+    criadaEm: string;
     feedback?: string;
+    feedbackVisto?: boolean;
 }
 
 export interface ItemDoacaoProduto {
@@ -71,6 +77,7 @@ export interface DoacaoMonetaria extends Doacao {
     valor: number;
     formaPagamento: FormaPagamento;
     recorrente: boolean;
+    cartaoFinal?: string;
 }
 
 export interface DoacaoProdutoBase extends Doacao {
@@ -100,6 +107,7 @@ export interface DadosDoacaoMonetaria extends DadosDoacaoBase {
     valor?: number;
     formaPagamento?: FormaPagamento;
     recorrente?: boolean;
+    cartaoFinal?: string;
 }
 
 export interface DadosDoacaoProduto extends DadosDoacaoBase {
@@ -107,6 +115,31 @@ export interface DadosDoacaoProduto extends DadosDoacaoBase {
     itens?: ItemDoacaoProduto[];
     formaEntrega?: FormaEntrega;
     visita?: Omit<Visita, "id" | "idDoacao">;
+}
+
+/* ============================================
+   |  Interfaces para sessão e autenticação   |
+   ============================================ */
+
+export interface Session {
+    token: string;
+    tipoUsuario: TipoUsuario;
+}
+
+export interface TokenPayload {
+    exp?: number;
+    sub?: string;
+}
+
+/* ============================================
+   |      Interface do perfil do usuário      |
+   ============================================ */
+
+export interface PerfilUsuario {
+    nome: string;
+    email: string;
+    telefone?: string | null;
+    cpf?: string | null;
 }
 
 /* ============================================
@@ -121,3 +154,4 @@ export type UnidadeMedida = "unidade" | "kg" | "g" | "l" | "ml" | "caixa" | "pac
 export type FormaPagamento = "pix" | "cartao_credito";
 export type FormaEntrega = "visita" | "compra_parceiro";
 export type DadosDoacao = DadosDoacaoBase | DadosDoacaoMonetaria | DadosDoacaoProduto;
+export type DoacaoRegistrada = DoacaoMonetaria | DoacaoProdutoVisita | DoacaoProdutoParceiro;
