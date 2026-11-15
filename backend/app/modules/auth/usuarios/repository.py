@@ -1,7 +1,9 @@
-from sqlalchemy import select
+from datetime import datetime
+
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.database.models import Usuario
+from app.database.models import TokenRedefinicaoSenha, Usuario
 
 
 class AuthRepository:
@@ -22,3 +24,28 @@ class AuthRepository:
         self._db.commit()
         self._db.refresh(usuario)
         return usuario
+
+    # ---------- Redefinição de senha ----------
+
+    def invalidate_reset_tokens(self, id_usuario: int, agora: datetime) -> None:
+        """Marca como usados os tokens ainda abertos do usuário (sem commit)."""
+        self._db.execute(
+            update(TokenRedefinicaoSenha)
+            .where(
+                TokenRedefinicaoSenha.id_usuario == id_usuario,
+                TokenRedefinicaoSenha.usado_em.is_(None),
+            )
+            .values(usado_em=agora)
+        )
+
+    def add_reset_token(self, token: TokenRedefinicaoSenha) -> None:
+        self._db.add(token)
+        self._db.commit()
+
+    def find_reset_token(self, token_hash: str) -> TokenRedefinicaoSenha | None:
+        return self._db.scalar(
+            select(TokenRedefinicaoSenha).where(TokenRedefinicaoSenha.token_hash == token_hash)
+        )
+
+    def commit(self) -> None:
+        self._db.commit()

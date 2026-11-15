@@ -2,7 +2,7 @@
 
 Backend da aplicação **NPET** — plataforma que conecta doadores a ONGs e instituições de proteção animal.
 
-> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro e login de usuários e de instituições (`/users/auth/*` e `/institutions/auth/*`), com senha em bcrypt e token JWT; as rotas de `/instituicoes` exigem o token. A listagem de instituições (`/instituicoes`) segue servida por dados mockados (`fake_db.py`).
+> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro e login de usuários e de instituições (`/users/auth/*` e `/institutions/auth/*`), com senha em bcrypt e token JWT; a leitura de `/instituicoes` (listagem e detalhe) é pública; criar, editar, excluir e `/instituicoes/me` exigem o token. As instituições ficam no banco (com redes sociais e necessidades); os dados iniciais vêm do seed `scripts/db_seed_instituicoes.py`.
 
 ## Stack
 
@@ -32,8 +32,11 @@ HTTP → Router (Controller) → Service (regra) → Repository (dados) → Post
 | Módulo | Rotas | Camadas |
 |---|---|---|
 | Login (todos os tipos) | `POST /api/v1/auth/login` · `POST /api/v1/auth/token` (formulário OAuth2) | `app/modules/auth/usuarios/` |
-| Cadastro de usuário | `POST /api/v1/users/auth/register` | `app/modules/auth/usuarios/` |
-| Instituições (listagem, mock) | `GET /api/v1/instituicoes` · `GET /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
+| Cadastro de usuário | `POST /api/v1/auth/register` | `app/modules/auth/usuarios/` |
+| Esqueci minha senha (público) | `POST /api/v1/auth/forgot-password` · `POST /api/v1/auth/reset-password` | `app/modules/auth/usuarios/` |
+| Perfil do usuário | `GET/PATCH /api/v1/users/me` (trocar `senha` exige `senha_atual`) · `POST /api/v1/users/me/deactivate` | `app/modules/usuarios/` |
+| Usuários (admin) | `GET /api/v1/users` · `GET/PATCH/DELETE /api/v1/users/{id}` · `POST /api/v1/users/{id}/reactivate` | `app/modules/usuarios/` |
+| Instituições (CRUD, ORM) | `GET/POST /api/v1/instituicoes` · `GET /api/v1/instituicoes/me` · `GET/PATCH/DELETE /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
 | Cadastro de instituição (usuário + perfil em `instituicoes`) | `POST /api/v1/institutions/auth/register` | `app/modules/auth/instituicoes/` |
 
 ## Estrutura de diretórios
@@ -45,6 +48,7 @@ backend/
 │   ├── core/
 │   │   ├── config.py            # configuração global (lê o .env, inclui DATABASE_URL)
 │   │   ├── exceptions.py        # AppError e subclasses (401, 403, 404, 409)
+│   │   ├── dependencies.py      # get_current_user (token/cookie), require_role, require_admin
 │   │   └── security.py          # bcrypt e geração/validação do JWT
 │   ├── database/
 │   │   ├── database.py          # engine, SessionLocal, Base e get_db()
@@ -55,13 +59,14 @@ backend/
 │   ├── health/router.py         # GET /health
 │   └── modules/
 │       ├── auth/
-│       │   ├── dependencies.py  # get_current_user (valida o JWT das rotas protegidas)
 │       │   ├── usuarios/        # register + login único /auth/login e /auth/token (ORM)
 │       │   └── instituicoes/    # register de instituição (ORM, tabela usuarios)
-│       └── instituicoes/        # listagem de instituições (fake_db, exige token)
+│       └── instituicoes/        # CRUD de instituições (ORM; leitura pública, escrita exige token)
 │           ├── repository.py
+│           ├── schemas.py
 │           ├── service.py
 │           └── router.py
+├── scripts/                     # db_create_admin.py, db_seed_instituicoes.py
 ├── migrations/                  # Alembic (env.py + versions/)
 ├── test/                        # testes de segurança (pytest)
 ├── alembic.ini
@@ -81,8 +86,11 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env              # e ajuste DATABASE_URL e JWT_SECRET_KEY
 alembic upgrade head                # cria/atualiza as tabelas
+python -m scripts.db_seed_instituicoes   # (opcional) popula as 9 instituições de exemplo
 uvicorn app.main:app --reload
 ```
+
+O seed é idempotente (pode rodar de novo sem duplicar) e não roda com `APP_ENV=production`. Cada instituição ganha um usuário `<slug>@seed.npet.example.com` (ex.: `aspaan@seed.npet.example.com`) com a senha definida em `SEED_PASSWORD`.
 
 A API sobe em `http://localhost:8000`.
 
@@ -100,6 +108,15 @@ A API sobe em `http://localhost:8000`.
 | `JWT_SECRET_KEY` | **sim** | `python -c "import secrets; print(secrets.token_hex(32))"` | Chave que assina os tokens |
 | `JWT_EXPIRE_MINUTES` | não | `30` | Validade do token |
 | `DEBUG` | não | `true` | Com `true`, o SQLAlchemy loga todo SQL executado |
+| `SEED_PASSWORD` | não | `senha-dev-123` | Senha dos usuários criados pelo seed (se vazia, o script pede no terminal) |
+| `FRONTEND_URL` / `RESET_PASSWORD_PATH` | não | `http://localhost:5173` / `/redefinir-senha` | Base do link enviado no e-mail de redefinição (`...?token=`) |
+| `RESET_TOKEN_EXPIRE_MINUTES` | não | `15` | Validade do link de redefinição |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` | não | `smtp.gmail.com`, `587`, ... | Envio de e-mail. Sem `SMTP_HOST`, o e-mail (com o link) só aparece no log da API |
+
+### Conta do usuário
+
+- **Esqueci minha senha:** `forgot-password` sempre responde `202` (não revela se o e-mail existe). Para contas ativas, gera um token de uso único (só o hash SHA-256 fica no banco, tabela `tokens_redefinicao_senha`), invalida links anteriores e envia o e-mail em segundo plano. `reset-password` recebe `{token, nova_senha}`; token inválido, expirado ou já usado → `400`.
+- **Desativação:** `POST /users/me/deactivate` com `{senha}` marca `usuarios.ativo = false`. Login e tokens já emitidos passam a responder `401` ("Esta conta está desativada."), a instituição some da listagem e o histórico é preservado. Só um admin reativa.
 
 ### Comandos do Alembic
 
@@ -121,7 +138,7 @@ alembic revision --autogenerate -m "descricao"        # gera migration após alt
 
 ## Autenticação (OAuth2 + JWT)
 
-O login é único para todos os tipos (`POST /auth/login`) e devolve o token JWT (HS256) junto com o `tipo_usuario`. O token carrega o `id_usuario` em `sub`, o tipo em `tipo_usuario` e a validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/modules/auth/dependencies.py](app/modules/auth/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>`. Token ausente, inválido, expirado ou de usuário inexistente → `401`. Para restringir uma rota por tipo, use `Depends(require_role(TipoUsuario.instituicao))`, que responde `403` aos demais tipos. A senha é limitada a 72 bytes (limite do bcrypt); acima disso o cadastro responde `422`.
+O login é único para todos os tipos (`POST /auth/login`) e devolve o token JWT (HS256) junto com o `tipo_usuario`. O token carrega o `id_usuario` em `sub`, o tipo em `tipo_usuario` e a validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/core/dependencies.py](app/core/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>`. Token ausente, inválido, expirado ou de usuário inexistente → `401`. Para restringir uma rota por tipo, use `Depends(require_role(TipoUsuario.instituicao))`, que responde `403` aos demais tipos (`require_admin` é o atalho para administradores). A senha precisa ter de 8 a 72 bytes (limite do bcrypt) e conter ao menos uma letra maiúscula, uma minúscula e um número; fora disso, cadastro, troca e redefinição de senha respondem `422`.
 
 No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
 
@@ -129,10 +146,10 @@ No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mai
 # o login devolve {"access_token": "...", "token_type": "bearer", "tipo_usuario": "doador"}
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\": \"doador@email.com.br\", \"senha\": \"senha1234\"}"
+  -d "{\"email\": \"doador@email.com.br\", \"senha\": \"Senha1234\"}"
 
 # rotas protegidas exigem o token no cabeçalho Authorization
-curl http://localhost:8000/api/v1/instituicoes -H "Authorization: Bearer SEU_TOKEN"
+curl http://localhost:8000/api/v1/users/me -H "Authorization: Bearer SEU_TOKEN"
 ```
 
 ## Testes
@@ -145,8 +162,8 @@ A suíte usa SQLite em memória; não precisa do PostgreSQL.
 
 ## Próximos passos
 
-- Migrar `modules/instituicoes` (hoje com dados mockados) para a ORM.
-- CRUD de redes sociais, necessidades e doações (models já existem).
+- Atualizar `scripts/test_seguranca.py` para as rotas atuais (7 testes ainda chamam `/users/auth/register`).
+- CRUD de redes sociais, necessidades e doações (models já existem; hoje redes e necessidades só entram pelo seed).
 
 ## Documentação adicional
 
