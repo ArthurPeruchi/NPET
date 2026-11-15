@@ -2,7 +2,7 @@
 
 Backend da aplicação **NPET** — plataforma que conecta doadores a ONGs e instituições de proteção animal.
 
-> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro e login de usuários e de instituições (`/users/auth/*` e `/institutions/auth/*`), com senha em bcrypt e token JWT; a leitura de `/instituicoes` (listagem e detalhe) é pública; criar, editar, excluir e `/instituicoes/me` exigem o token. As instituições ficam no banco (com redes sociais e necessidades); os dados iniciais vêm do seed `scripts/db_seed_instituicoes.py`.
+> **Estado atual:** persistência em **PostgreSQL** via SQLAlchemy 2.0 + Alembic. Entregues: cadastro de usuários e de instituições (`/auth/register` e `/institutions/auth/register`) e login único (`/auth/login`), com senha em bcrypt e token JWT; perfil, redefinição de senha e desativação de conta; a leitura de `/instituicoes` (listagem e detalhe) é pública; criar, editar, excluir e `/instituicoes/me` exigem o token. As instituições ficam no banco (com redes sociais e necessidades); os dados iniciais vêm do seed `scripts/db_seed_instituicoes.py`. Doações em dinheiro (PIX e cartão) são cobradas pelo **Mercado Pago** (Checkout Transparente), com histórico em `/doacoes/me`.
 
 ## Stack
 
@@ -13,7 +13,8 @@ Backend da aplicação **NPET** — plataforma que conecta doadores a ONGs e ins
 - **Alembic** `1.14.0` (migrations)
 - **bcrypt** `5.0.0` (hash de senha)
 - **PyJWT** `2.10.1` (tokens JWT) / **python-multipart** `0.0.20` (formulário OAuth2 do Swagger)
-- **pytest** `8.3.4` / **httpx** `0.28.1` (testes)
+- **httpx** `0.28.1` (cliente da API do Mercado Pago)
+- **pytest** `8.3.4` (testes)
 
 ## Arquitetura
 
@@ -31,49 +32,64 @@ HTTP → Router (Controller) → Service (regra) → Repository (dados) → Post
 
 | Módulo | Rotas | Camadas |
 |---|---|---|
-| Login (todos os tipos) | `POST /api/v1/auth/login` · `POST /api/v1/auth/token` (formulário OAuth2) | `app/modules/auth/usuarios/` |
+| Login e logout (todos os tipos) | `POST /api/v1/auth/login` · `POST /api/v1/auth/logout` | `app/modules/auth/usuarios/` |
 | Cadastro de usuário | `POST /api/v1/auth/register` | `app/modules/auth/usuarios/` |
 | Esqueci minha senha (público) | `POST /api/v1/auth/forgot-password` · `POST /api/v1/auth/reset-password` | `app/modules/auth/usuarios/` |
 | Perfil do usuário | `GET/PATCH /api/v1/users/me` (trocar `senha` exige `senha_atual`) · `POST /api/v1/users/me/deactivate` | `app/modules/usuarios/` |
 | Usuários (admin) | `GET /api/v1/users` · `GET/PATCH/DELETE /api/v1/users/{id}` · `POST /api/v1/users/{id}/reactivate` | `app/modules/usuarios/` |
 | Instituições (CRUD, ORM) | `GET/POST /api/v1/instituicoes` · `GET /api/v1/instituicoes/me` · `GET/PATCH/DELETE /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
 | Cadastro de instituição (usuário + perfil em `instituicoes`) | `POST /api/v1/institutions/auth/register` | `app/modules/auth/instituicoes/` |
+| Doações em dinheiro (Mercado Pago) | `POST /api/v1/doacoes/monetarias` (doador) · `GET /api/v1/doacoes/me` · `GET /api/v1/doacoes/{id}` · `PATCH /api/v1/doacoes/{id}/recorrencia` · `PATCH /api/v1/doacoes/{id}/feedback-visto` | `app/modules/doacoes/` |
+| Webhook do Mercado Pago (público, assinado) | `POST /api/v1/pagamentos/webhook` | `app/modules/pagamentos/` |
 
 ## Estrutura de diretórios
 
 ```
 backend/
 ├── app/
-│   ├── main.py                  # cria o app FastAPI, CORS, handler de erros, /static
+│   ├── main.py                      # cria o app FastAPI, CORS, handler de erros e /static
+│   ├── api/
+│   │   └── router.py                # junta todos os routers sob /api/v1
 │   ├── core/
-│   │   ├── config.py            # configuração global (lê o .env, inclui DATABASE_URL)
-│   │   ├── exceptions.py        # AppError e subclasses (401, 403, 404, 409)
-│   │   ├── dependencies.py      # get_current_user (token/cookie), require_role, require_admin
-│   │   └── security.py          # bcrypt e geração/validação do JWT
+│   │   ├── config.py                # configurações (lê o .env)
+│   │   ├── dependencies.py          # get_current_user (token/cookie), require_role, require_admin
+│   │   ├── email.py                 # envio de e-mail (SMTP ou log)
+│   │   ├── exceptions.py            # AppError e subclasses (401, 402, 403, 404, 409, 422, 502)
+│   │   └── security.py              # bcrypt e geração/validação do JWT
 │   ├── database/
-│   │   ├── database.py          # engine, SessionLocal, Base e get_db()
-│   │   ├── models.py            # models SQLAlchemy (tabelas)
-│   │   ├── schemas.py           # schemas Pydantic (Create/Update/Out)
-│   │   └── test_conn.py         # diagnóstico de conexão com o PostgreSQL
-│   ├── api/router.py            # junta os routers
-│   ├── health/router.py         # GET /health
-│   └── modules/
-│       ├── auth/
-│       │   ├── usuarios/        # register + login único /auth/login e /auth/token (ORM)
-│       │   └── instituicoes/    # register de instituição (ORM, tabela usuarios)
-│       └── instituicoes/        # CRUD de instituições (ORM; leitura pública, escrita exige token)
-│           ├── repository.py
-│           ├── schemas.py
-│           ├── service.py
-│           └── router.py
-├── scripts/                     # db_create_admin.py, db_seed_instituicoes.py
-├── migrations/                  # Alembic (env.py + versions/)
-├── test/                        # testes de segurança (pytest)
+│   │   ├── database.py              # engine, SessionLocal, Base e get_db()
+│   │   ├── models.py                # models SQLAlchemy (tabelas)
+│   │   ├── schemas.py               # schemas Pydantic de usuário e auth
+│   │   └── test_conn.py             # diagnóstico de conexão com o PostgreSQL
+│   ├── health/
+│   │   └── router.py                # GET /health
+│   ├── integrations/
+│   │   └── mercadopago.py           # cliente da API de Payments e validação do webhook
+│   ├── modules/                     # cada módulo: router → service → repository (+ schemas)
+│   │   ├── auth/
+│   │   │   ├── usuarios/            # cadastro, login, logout, esqueci/redefinir senha
+│   │   │   └── instituicoes/        # cadastro de instituição (usuário + perfil)
+│   │   ├── usuarios/                # perfil (/users/me), desativação e admin de usuários
+│   │   ├── instituicoes/            # CRUD de instituições (leitura pública)
+│   │   ├── doacoes/                 # doações em dinheiro (Mercado Pago) e histórico
+│   │   └── pagamentos/              # webhook do Mercado Pago
+│   └── static/
+│       └── instituicoes/            # logos das instituições do seed
+├── migrations/
+│   ├── env.py
+│   └── versions/                    # uma migration por mudança de schema
+├── scripts/
+│   ├── conftest.py                  # fixtures do pytest (SQLite em memória)
+│   ├── db_create_admin.py           # cria um usuário administrador
+│   ├── db_seed_instituicoes.py      # seed das 9 instituições de exemplo
+│   ├── test_conn.py                 # teste manual de conexão (fora do pytest)
+│   ├── test_seguranca.py            # testes de autenticação
+│   └── test_doacoes.py              # testes de doações e Mercado Pago
+├── .env.example                     # modelo de variáveis de ambiente
 ├── alembic.ini
-├── .env.example                 # modelo de variáveis de ambiente
 ├── requirements.txt
-├── RUN.md                       # como rodar (resumido)
-└── STARTUP.md                   # guia detalhado (setup do banco incluso)
+├── RUN.md                           # guia rápido de execução e uso da API
+└── STARTUP.md                       # guia detalhado (setup do banco incluso)
 ```
 
 ## Como rodar (modo desenvolvimento)
@@ -85,14 +101,26 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1          # Windows (PowerShell) — ou .venv\Scripts\activate.bat no CMD
 pip install -r requirements.txt
 copy .env.example .env              # e ajuste DATABASE_URL e JWT_SECRET_KEY
-alembic upgrade head                # cria/atualiza as tabelas
+python -m alembic upgrade head      # cria/atualiza as tabelas
 python -m scripts.db_seed_instituicoes   # (opcional) popula as 9 instituições de exemplo
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
-O seed é idempotente (pode rodar de novo sem duplicar) e não roda com `APP_ENV=production`. Cada instituição ganha um usuário `<slug>@seed.npet.example.com` (ex.: `aspaan@seed.npet.example.com`) com a senha definida em `SEED_PASSWORD`.
+A API sobe em `http://localhost:8000`. Se a porta estiver ocupada (erro `[WinError 10013]`), use `--port 8001`.
 
-A API sobe em `http://localhost:8000`.
+O passo a passo completo, com exemplos de uso da API, está em [RUN.md](./RUN.md).
+
+### Seed das instituições
+
+```bash
+python -m scripts.db_seed_instituicoes
+```
+
+[scripts/db_seed_instituicoes.py](scripts/db_seed_instituicoes.py) cadastra as 9 instituições de exemplo, com redes sociais, necessidades e logos (`app/static/instituicoes/`). Rode depois do `alembic upgrade head`.
+
+- Rode como módulo (`-m`, sem `.py`), senão os imports de `app` falham.
+- Cada instituição ganha um usuário `<slug>@seed.npet.example.com` (ex.: `aspaan@seed.npet.example.com`) com a senha de `SEED_PASSWORD`. Se a variável estiver vazia, o script pede a senha no terminal. Use uma senha que siga a regra da API (ex.: `Senha1234`).
+- É idempotente (pode rodar de novo sem duplicar) e não roda com `APP_ENV=production`.
 
 > Se o PowerShell recusar rodar `Activate.ps1` (erro de "execution policy"), use o `activate.bat` pelo CMD, ou chame os executáveis de `.venv\Scripts\` diretamente (ex.: `.venv\Scripts\python.exe -m alembic upgrade head`).
 
@@ -108,15 +136,34 @@ A API sobe em `http://localhost:8000`.
 | `JWT_SECRET_KEY` | **sim** | `python -c "import secrets; print(secrets.token_hex(32))"` | Chave que assina os tokens |
 | `JWT_EXPIRE_MINUTES` | não | `30` | Validade do token |
 | `DEBUG` | não | `true` | Com `true`, o SQLAlchemy loga todo SQL executado |
-| `SEED_PASSWORD` | não | `senha-dev-123` | Senha dos usuários criados pelo seed (se vazia, o script pede no terminal) |
+| `SEED_PASSWORD` | não | `Senha1234` | Senha dos usuários criados pelo seed (se vazia, o script pede no terminal) |
 | `FRONTEND_URL` / `RESET_PASSWORD_PATH` | não | `http://localhost:5173` / `/redefinir-senha` | Base do link enviado no e-mail de redefinição (`...?token=`) |
 | `RESET_TOKEN_EXPIRE_MINUTES` | não | `15` | Validade do link de redefinição |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` | não | `smtp.gmail.com`, `587`, ... | Envio de e-mail. Sem `SMTP_HOST`, o e-mail (com o link) só aparece no log da API |
+| `MP_ACCESS_TOKEN` | para doar | `TEST-...` | Access token da conta Mercado Pago da NPET (sem ele, criar doação responde `502`) |
+| `MP_WEBHOOK_SECRET` | para o webhook | — | "Assinatura secreta" da seção Webhooks do painel do MP (sem ela, o webhook responde `503`) |
+| `MP_NOTIFICATION_URL` | não | `https://xxxx.ngrok.app/api/v1/pagamentos/webhook` | URL pública enviada ao MP em cada pagamento |
+| `MP_API_URL` / `MP_PIX_EXPIRATION_MINUTES` | não | `https://api.mercadopago.com` / `30` | Endereço da API e validade do QR Code PIX |
 
 ### Conta do usuário
 
 - **Esqueci minha senha:** `forgot-password` sempre responde `202` (não revela se o e-mail existe). Para contas ativas, gera um token de uso único (só o hash SHA-256 fica no banco, tabela `tokens_redefinicao_senha`), invalida links anteriores e envia o e-mail em segundo plano. `reset-password` recebe `{token, nova_senha}`; token inválido, expirado ou já usado → `400`.
 - **Desativação:** `POST /users/me/deactivate` com `{senha}` marca `usuarios.ativo = false`. Login e tokens já emitidos passam a responder `401` ("Esta conta está desativada."), a instituição some da listagem e o histórico é preservado. Só um admin reativa.
+
+### Doações e pagamentos (Mercado Pago)
+
+Todo pagamento cai na conta Mercado Pago da NPET; a doação registra a instituição de destino.
+
+- **Criar:** `POST /doacoes/monetarias` (só doador) com `{idInstituicao, valor, formaPagamento, recorrente}`. Valor de R$ 1,00 a R$ 10.000,00, com 2 casas. A instituição precisa existir, estar com a conta ativa e com `aceita_doacoes`.
+  - **PIX:** responde `201` com `status: "pendente"` e `pix: {qrCode, expiraEm}` (o "copia e cola"; o frontend gera a imagem do QR).
+  - **Cartão:** envie também `cardToken` e `paymentMethodId` (e opcionalmente `issuerId`), gerados pelo SDK JS do Mercado Pago no navegador. **Número, validade e CVV nunca chegam ao backend**; só os 4 últimos dígitos ficam guardados (`cartaoFinal`). Aprovado → `201` com `status: "confirmada"`. Recusado → `402` com o motivo (a doação fica no histórico como `cancelada`).
+  - Falha de comunicação com o Mercado Pago → `502` (doação `cancelada`).
+- **Confirmação do PIX:** chega pelo webhook. Além disso, `GET /doacoes/{id}` de uma doação pendente consulta o Mercado Pago antes de responder (o frontend pode consultar a cada poucos segundos).
+- **Webhook:** `POST /pagamentos/webhook` valida o header `x-signature` (HMAC-SHA256 com `MP_WEBHOOK_SECRET`; inválido → `401`) e nunca confia no corpo: busca o pagamento na API do MP e atualiza a doação. Pagamento desconhecido → `200`.
+- **Recorrência:** `recorrente` é só um lembrete (o frontend monta uma nova doação pré-preenchida e o doador confirma); não há cobrança automática.
+- **Status do MP → status da doação:** `approved` → `confirmada`; `pending`/`in_process`/`authorized` → `pendente`; `rejected`/`cancelled`/`refunded`/`charged_back` → `cancelada`.
+
+**Testando no sandbox:** use as credenciais de teste da conta (`MP_ACCESS_TOKEN=TEST-...`). Para cartão, gere um token com a public key de teste (`POST https://api.mercadopago.com/v1/card_tokens?public_key=...` com um cartão de teste do Mercado Pago; titular `APRO` aprova, `OTHE` recusa) e chame `POST /doacoes/monetarias`. Para receber o webhook em dev, exponha a API (ex.: `ngrok http 8000`), configure a URL no painel do MP e copie a assinatura secreta para `MP_WEBHOOK_SECRET`.
 
 ### Comandos do Alembic
 
@@ -138,9 +185,9 @@ alembic revision --autogenerate -m "descricao"        # gera migration após alt
 
 ## Autenticação (OAuth2 + JWT)
 
-O login é único para todos os tipos (`POST /auth/login`) e devolve o token JWT (HS256) junto com o `tipo_usuario`. O token carrega o `id_usuario` em `sub`, o tipo em `tipo_usuario` e a validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/core/dependencies.py](app/core/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>`. Token ausente, inválido, expirado ou de usuário inexistente → `401`. Para restringir uma rota por tipo, use `Depends(require_role(TipoUsuario.instituicao))`, que responde `403` aos demais tipos (`require_admin` é o atalho para administradores). A senha precisa ter de 8 a 72 bytes (limite do bcrypt) e conter ao menos uma letra maiúscula, uma minúscula e um número; fora disso, cadastro, troca e redefinição de senha respondem `422`.
+O login é único para todos os tipos (`POST /auth/login`) e devolve o token JWT (HS256) junto com o `tipo_usuario`. O token carrega o `id_usuario` em `sub`, o tipo em `tipo_usuario` e a validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/core/dependencies.py](app/core/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>` ou, na falta dele, o cookie `access_token` gravado pelo login. Token ausente, inválido, expirado ou de usuário inexistente → `401`. Para restringir uma rota por tipo, use `Depends(require_role(TipoUsuario.instituicao))`, que responde `403` aos demais tipos (`require_admin` é o atalho para administradores). A senha precisa ter de 8 a 72 bytes (limite do bcrypt) e conter ao menos uma letra maiúscula, uma minúscula e um número; fora disso, cadastro, troca e redefinição de senha respondem `422`.
 
-No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
+No Swagger (`/docs`), faça login em `POST /auth/login` (**Try it out**): o cookie gravado na resposta passa a ser enviado nas rotas protegidas. Para sair, use `POST /auth/logout`. O botão **Authorize** (cadeado) não funciona no momento, porque depende de `POST /auth/token`, que está desativado. O passo a passo está em [RUN.md](./RUN.md#7-usar-a-api-pelo-swagger).
 
 ```bash
 # o login devolve {"access_token": "...", "token_type": "bearer", "tipo_usuario": "doador"}
@@ -155,17 +202,18 @@ curl http://localhost:8000/api/v1/users/me -H "Authorization: Bearer SEU_TOKEN"
 ## Testes
 
 ```bash
-python -m pytest test
+python -m pytest scripts
 ```
 
-A suíte usa SQLite em memória; não precisa do PostgreSQL.
+A suíte fica em `scripts/` (`test_seguranca.py` e `test_doacoes.py`), usa SQLite em memória e um Mercado Pago falso; não precisa do PostgreSQL nem de credenciais.
 
 ## Próximos passos
 
-- Atualizar `scripts/test_seguranca.py` para as rotas atuais (7 testes ainda chamam `/users/auth/register`).
-- CRUD de redes sociais, necessidades e doações (models já existem; hoje redes e necessidades só entram pelo seed).
+- Atualizar `scripts/test_seguranca.py` para as rotas atuais (7 testes ainda chamam `/users/auth/register` e `/auth/token`).
+- Reativar `POST /auth/token` (botão **Authorize** do Swagger).
+- CRUD de redes sociais e necessidades (hoje só entram pelo seed) e doação de produtos (models já existem).
 
 ## Documentação adicional
 
-- [RUN.md](./RUN.md) — guia rápido de execução
+- [RUN.md](./RUN.md) — guia rápido de execução, seed e uso da API (Swagger e curl)
 - [STARTUP.md](./STARTUP.md) — guia detalhado da arquitetura e do setup do banco
