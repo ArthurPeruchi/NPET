@@ -57,7 +57,7 @@ export default function Instituicoes() {
             <InstituicaoCard
               key={inst.id}
               instituicao={inst}
-              onVerDetalhes={setInstSelecionada}   // abre o modal
+              onVerDetalhes={setInstSelecionada}
             />
           ))}
         </div>
@@ -82,7 +82,7 @@ export default function Instituicoes() {
         parte da nossa rede!
       </p>
 
-      <Botao variant="primario" size="md" className="btn-parceiro">
+      <Botao variant="primario" size="lg" className="btn-parceiro">
         Torne-se Parceiro
       </Botao>
 

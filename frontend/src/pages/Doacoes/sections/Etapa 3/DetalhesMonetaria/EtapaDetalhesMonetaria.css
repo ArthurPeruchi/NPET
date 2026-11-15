@@ -64,12 +64,12 @@
 
 @media (max-width: 768px) {
     .campos-cartao, .botao-avancar {
-        width: 60%;
+        width: 80%;
     }
 
     .container-campos-cartao {
         flex-direction: column;
-        width: 60%;
+        width: 80%;
         gap: 0;
     }
 }
