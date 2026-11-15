@@ -6,8 +6,7 @@ import "./Instituicoes.css";
 import useInstituicoes from "../../../../hooks/useInstituicoes";
 import type { Instituicao } from "../../../../types/domain";
 import useIsMobile from "../../../../hooks/useIsMobile";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../../../auth/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function Instituicoes() {
   const [inicio, setInicio] = useState(0);
@@ -15,8 +14,8 @@ export default function Instituicoes() {
   const CARDS_VISIVEIS = isMobile ? 1 : 3;
 
   const navigate = useNavigate();
-  const { autenticado } = useAuth();
-  const { instituicoes, carregando, erro } = useInstituicoes(autenticado);
+
+  const { instituicoes, carregando, erro } = useInstituicoes();
 
   const [instSelecionada, setInstSelecionada] = useState<Instituicao | null>(null);
 
@@ -46,13 +45,11 @@ export default function Instituicoes() {
         </button>
 
         <div className="instituicoes-cards" role="list">
-          {!autenticado && (
-            <p role="status">
-              <Link to="/login">Entre na sua conta</Link> para conhecer as instituições parceiras.
-            </p>
-          )}
           {carregando && <p role="status">Carregando instituições...</p>}
           {erro && <p role="alert">{erro}</p>}
+          {!carregando && !erro && instituicoes.length === 0 && (
+            <p role="status">Nenhuma instituição disponível no momento.</p>
+          )}
           {visiveis.map(inst => (
             <InstituicaoCard
               key={inst.id}
@@ -94,9 +91,9 @@ export default function Instituicoes() {
           onDoar={(inst) => {
             setInstSelecionada(null);
             navigate("/doacoes", {
-                state: { instituicaoPreSelecionada: inst }
+              state: { instituicaoPreSelecionada: inst }
             });
-        }}
+          }}
         />
       )}
     </section>
