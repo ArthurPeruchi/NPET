@@ -1,3 +1,7 @@
+/* ============================================
+   |       Interfaces para instituições       |
+   ============================================ */
+
 export interface RedesSociais {
     facebook?: string;
     instagram?: string;
@@ -125,6 +129,17 @@ export interface Session {
 export interface TokenPayload {
     exp?: number;
     sub?: string;
+}
+
+/* ============================================
+   |      Interface do perfil do usuário      |
+   ============================================ */
+
+export interface PerfilUsuario {
+    nome: string;
+    email: string;
+    telefone?: string | null;
+    cpf?: string | null;
 }
 
 /* ============================================
