@@ -35,7 +35,7 @@ HTTP → Router (Controller) → Service (regra) → Repository (dados) → Post
 | Login e logout (todos os tipos) | `POST /api/v1/auth/login` · `POST /api/v1/auth/logout` | `app/modules/auth/usuarios/` |
 | Cadastro de usuário | `POST /api/v1/auth/register` | `app/modules/auth/usuarios/` |
 | Esqueci minha senha (público) | `POST /api/v1/auth/forgot-password` · `POST /api/v1/auth/reset-password` | `app/modules/auth/usuarios/` |
-| Perfil do usuário | `GET/PATCH /api/v1/users/me` (trocar `senha` exige `senha_atual`) · `POST /api/v1/users/me/deactivate` | `app/modules/usuarios/` |
+| Perfil do usuário | `GET/PATCH /api/v1/users/me` (trocar `senha` exige `senha_atual`) · `POST /api/v1/users/me/deactivate` · `POST /api/v1/users/me/delete` (ambas confirmam a senha) | `app/modules/usuarios/` |
 | Usuários (admin) | `GET /api/v1/users` · `GET/PATCH/DELETE /api/v1/users/{id}` · `POST /api/v1/users/{id}/reactivate` | `app/modules/usuarios/` |
 | Instituições (CRUD, ORM) | `GET/POST /api/v1/instituicoes` · `GET /api/v1/instituicoes/me` · `GET/PATCH/DELETE /api/v1/instituicoes/{id}` | `app/modules/instituicoes/` |
 | Cadastro de instituição (usuário + perfil em `instituicoes`) | `POST /api/v1/institutions/auth/register` | `app/modules/auth/instituicoes/` |
@@ -149,6 +149,7 @@ python -m scripts.db_seed_instituicoes
 
 - **Esqueci minha senha:** `forgot-password` sempre responde `202` (não revela se o e-mail existe). Para contas ativas, gera um token de uso único (só o hash SHA-256 fica no banco, tabela `tokens_redefinicao_senha`), invalida links anteriores e envia o e-mail em segundo plano. `reset-password` recebe `{token, nova_senha}`; token inválido, expirado ou já usado → `400`.
 - **Desativação:** `POST /users/me/deactivate` com `{senha}` marca `usuarios.ativo = false`. Login e tokens já emitidos passam a responder `401` ("Esta conta está desativada."), a instituição some da listagem e o histórico é preservado. Só um admin reativa.
+- **Exclusão:** `POST /users/me/delete` com `{senha}` apaga a conta e encerra a sessão. Senha errada → `400`. Contas com doações ainda não podem ser excluídas (regra de anonimização em definição); use a desativação.
 
 ### Doações e pagamentos (Mercado Pago)
 

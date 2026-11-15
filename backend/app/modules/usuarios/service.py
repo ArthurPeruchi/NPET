@@ -61,10 +61,14 @@ class UsuarioService:
 
         return self._repository.update(usuario)
 
-    def deactivate_me(self, current_user: Usuario, senha: str) -> None:
+    @staticmethod
+    def _confirmar_senha(current_user: Usuario, senha: str) -> None:
         # 400 (e não 401) para a senha errada: o frontend trata 401 como sessão expirada.
         if current_user.senha is None or not verify_password(senha, current_user.senha):
             raise AppError("Senha incorreta.")
+
+    def deactivate_me(self, current_user: Usuario, senha: str) -> None:
+        self._confirmar_senha(current_user, senha)
         current_user.ativo = False
         self._repository.update(current_user)
 
@@ -74,6 +78,10 @@ class UsuarioService:
             raise AppError("Use a desativação da própria conta em /users/me/deactivate.")
         usuario.ativo = ativo
         return self._repository.update(usuario)
+
+    def delete_me(self, current_user: Usuario, senha: str) -> None:
+        self._confirmar_senha(current_user, senha)
+        self._repository.delete(current_user)
 
     def delete_user(self, id_usuario: int, current_user: Usuario) -> None:
         usuario = self.get_user(id_usuario, current_user)
