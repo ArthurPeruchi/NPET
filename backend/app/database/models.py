@@ -10,8 +10,10 @@ from sqlalchemy import (
     ForeignKey,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     false,
+    func,
     true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -177,6 +179,10 @@ class Doacao(Base):
         pg_enum(StatusDoacao, "status_doacao"), server_default="pendente"
     )
     feedback_doacao: Mapped[str | None] = mapped_column(String(300))
+    feedback_visto: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Preenchida quando o pagamento é aprovado (RNE-013).
+    confirmada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     usuario: Mapped["Usuario"] = relationship(back_populates="doacoes")
     instituicao: Mapped["Instituicao"] = relationship(back_populates="doacoes")
@@ -200,6 +206,14 @@ class DoacaoDinheiro(Base):
         pg_enum(FormaPagamento, "forma_pagamento")
     )
     recorrente: Mapped[bool] = mapped_column(Boolean, server_default=false())
+    cartao_final: Mapped[str | None] = mapped_column(CHAR(4))
+
+    # Dados do pagamento no Mercado Pago (o backend nunca guarda número, validade ou CVV do cartão).
+    mp_payment_id: Mapped[str | None] = mapped_column(String(30), unique=True)
+    mp_status: Mapped[str | None] = mapped_column(String(30))
+    mp_status_detail: Mapped[str | None] = mapped_column(String(60))
+    pix_qr_code: Mapped[str | None] = mapped_column(Text)
+    pix_expira_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     doacao: Mapped["Doacao"] = relationship(back_populates="dinheiro")
 

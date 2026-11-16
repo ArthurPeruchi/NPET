@@ -92,6 +92,10 @@ class DesativarContaRequest(BaseModel):
     senha: str = Field(min_length=1)
 
 
+class ExcluirContaRequest(DesativarContaRequest):
+    """Mesma confirmação da desativação: a senha atual do usuário."""
+
+
 class UsuarioOut(ORMBase):
     id_usuario: int
     nome: str

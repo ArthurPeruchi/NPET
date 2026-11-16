@@ -2,7 +2,7 @@
 
 Este documento explica, de forma simples, o que existe hoje no backend do NPET, por quê, e como um novo desenvolvedor sobe o ambiente do zero.
 
-> **Estado atual:** os dados ficam em **PostgreSQL**, acessado pela ORM do **SQLAlchemy 2.0**; o schema do banco é versionado com **Alembic**. Entregues: cadastro/login de usuários (senha com hash bcrypt) com token JWT; a leitura de `/instituicoes` (listagem e detalhe) é pública; criar, editar, excluir e `/instituicoes/me` exigem o token. O cadastro de instituições (`/institutions/auth/register`) cria, na mesma transação, o registro em `usuarios` (com `tipo_usuario = instituicao`) e o perfil em `instituicoes` (nome, cidade, UF e CNPJ opcional). As instituições ficam no banco, com dados iniciais carregados por `scripts/db_seed_instituicoes.py`.
+> **Estado atual:** os dados ficam em **PostgreSQL**, acessado pela ORM do **SQLAlchemy 2.0**; o schema do banco é versionado com **Alembic**. Entregues: cadastro/login de usuários (senha com hash bcrypt) com token JWT; a leitura de `/instituicoes` (listagem e detalhe) é pública; criar, editar, excluir e `/instituicoes/me` exigem o token. O cadastro de instituições (`/institutions/auth/register`) cria, na mesma transação, o registro em `usuarios` (com `tipo_usuario = instituicao`) e o perfil em `instituicoes` (nome, cidade, UF e CNPJ opcional). As instituições ficam no banco, com dados iniciais carregados por `scripts/db_seed_instituicoes.py`. Doações em dinheiro (PIX e cartão) são cobradas pelo Mercado Pago, com histórico em `/doacoes/me` (detalhes em [README.md](README.md#doações-e-pagamentos-mercado-pago)).
 
 ---
 
@@ -56,14 +56,21 @@ Teste a conexão (opcional) e crie as tabelas:
 
 ```bash
 python -m app.database.test_conn      # deve imprimir "OK, conectou"
-alembic upgrade head                  # aplica migrations/versions/*
-python -m scripts.db_seed_instituicoes  # (opcional) 9 instituições de exemplo; senha em SEED_PASSWORD
+python -m alembic upgrade head        # aplica migrations/versions/*
 ```
+
+Popule as instituições de exemplo (opcional, mas recomendado para ver a Home com dados):
+
+```bash
+python -m scripts.db_seed_instituicoes
+```
+
+O seed ([scripts/db_seed_instituicoes.py](scripts/db_seed_instituicoes.py)) cadastra 9 instituições com redes sociais, necessidades e logos (`app/static/instituicoes/`). Cada uma ganha um usuário `<slug>@seed.npet.example.com` com a senha de `SEED_PASSWORD` no `.env` (ex.: `Senha1234`); se a variável estiver vazia, o script pede a senha no terminal. Ele é idempotente, não roda com `APP_ENV=production` e precisa ser chamado como módulo (`-m`, sem `.py`).
 
 Suba a API:
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 ## 4. Migrations (Alembic)
@@ -89,24 +96,31 @@ backend/
 │   ├── main.py                  # cria o app FastAPI, CORS, handler de erros, /static
 │   ├── core/
 │   │   ├── config.py            # configuração global (lê o .env)
-│   │   ├── exceptions.py        # AppError, Unauthorized/Forbidden/NotFound/Conflict
 │   │   ├── dependencies.py      # get_current_user, require_role, require_admin
+│   │   ├── email.py             # envio de e-mail (SMTP ou log)
+│   │   ├── exceptions.py        # AppError e subclasses (401, 402, 403, 404, 409, 422, 502)
 │   │   └── security.py          # bcrypt e JWT
 │   ├── database/
 │   │   ├── database.py          # engine, SessionLocal, Base, get_db()
 │   │   ├── models.py            # tabelas (SQLAlchemy)
 │   │   ├── schemas.py           # DTOs (Pydantic)
 │   │   └── test_conn.py         # diagnóstico de conexão
+│   ├── integrations/
+│   │   └── mercadopago.py       # cliente do Mercado Pago e validação do webhook
 │   ├── api/router.py            # junta os routers
 │   ├── health/router.py         # GET /health
-│   └── modules/
-│       ├── auth/usuarios/       # POST /users/auth/register; POST /auth/login e /auth/token
-│       ├── auth/instituicoes/   # POST /institutions/auth/register (ORM)
-│       └── instituicoes/        # CRUD /instituicoes (ORM; leitura pública, escrita exige token)
+│   ├── modules/
+│   │   ├── auth/usuarios/       # POST /auth/register, /auth/login, /auth/logout, esqueci/redefinir senha
+│   │   ├── auth/instituicoes/   # POST /institutions/auth/register
+│   │   ├── usuarios/            # /users/me, desativação e admin de usuários
+│   │   ├── instituicoes/        # CRUD /instituicoes (leitura pública, escrita exige token)
+│   │   ├── doacoes/             # /doacoes (Mercado Pago) e histórico
+│   │   └── pagamentos/          # POST /pagamentos/webhook
+│   └── static/instituicoes/     # logos das instituições do seed
 ├── migrations/
 │   ├── env.py
 │   └── versions/                # uma migration por mudança de schema
-├── test/                        # conftest.py + test_seguranca.py (pytest)
+├── scripts/                     # seed, criação de admin e testes (conftest.py, test_*.py)
 ├── alembic.ini
 ├── .env.example
 ├── requirements.txt
@@ -138,10 +152,10 @@ curl http://localhost:8000/api/v1/users/me -H "Authorization: Bearer SEU_TOKEN"
 
 Sem token, com token inválido ou expirado → `401`.
 
-No Swagger (`/docs`), clique em **Authorize** (cadeado no topo), informe o e-mail em `username` e a senha em `password` e deixe `client_id` e `client_secret` em branco. O botão usa `POST /auth/token` (formulário padrão do OAuth2), que vale para usuários e instituições. Para testar o `401`, use **Logout** no mesmo cadeado.
+No Swagger (`/docs`), faça login em `POST /auth/login`: o cookie gravado na resposta passa a valer nas rotas protegidas. O botão **Authorize** (cadeado) não funciona no momento, porque depende de `POST /auth/token`, que está desativado. Mais exemplos de uso em [RUN.md](RUN.md#7-usar-a-api-pelo-swagger).
 
-A suíte automatizada fica em `test/` e roda com `python -m pytest test` (usa SQLite em memória, não precisa do PostgreSQL).
+A suíte automatizada fica em `scripts/` (`test_seguranca.py` e `test_doacoes.py`) e roda com `python -m pytest scripts` (usa SQLite em memória e um Mercado Pago falso; não precisa do PostgreSQL).
 
 ## 7. Próximos passos
 
-- CRUD de redes sociais, necessidades e doações.
+- CRUD de redes sociais e necessidades (hoje só entram pelo seed) e doação de produtos.

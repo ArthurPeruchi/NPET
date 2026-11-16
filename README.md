@@ -4,7 +4,7 @@ Plataforma que conecta doadores a ONGs e instituições de proteção animal, fa
 
 > **"Por trás de cada doação, um focinho feliz."**
 
-> **Estado atual:** o frontend (React + TypeScript) consome uma API REST (FastAPI) com persistência em **PostgreSQL**. Entregues: cadastro de doadores e instituições, login único com token JWT, sessão com expiração no frontend, rotas protegidas e o fluxo de doação em construção (seleção de instituição, método e detalhes). As instituições ficam no PostgreSQL, com dados iniciais carregados pelo seed `backend/scripts/db_seed_instituicoes.py`.
+> **Estado atual:** o frontend (React + TypeScript) consome uma API REST (FastAPI) com persistência em **PostgreSQL**. Entregues: cadastro de doadores e instituições, login único com token JWT, sessão com expiração no frontend, rotas protegidas e o fluxo de doação em construção (seleção de instituição, método e detalhes). As instituições ficam no PostgreSQL, com dados iniciais carregados pelo seed `backend/scripts/db_seed_instituicoes.py`. No backend, a API de doações em dinheiro (PIX e cartão via Mercado Pago, com histórico) está pronta; a integração com o frontend está em andamento.
 
 ## Sobre o projeto
 
@@ -34,11 +34,8 @@ Protótipos no Figma: [Desktop (Wireframe + Hi-Fi)](https://www.figma.com/design
 - **Python 3.10+** / **FastAPI** `0.115.6` / **Uvicorn** `0.34.0`
 - **PostgreSQL** com **SQLAlchemy** `2.0.36` (ORM) e **Alembic** `1.14.0` (migrations)
 - **bcrypt** (hash de senha) / **PyJWT** (tokens JWT, OAuth2 Bearer)
+- **Mercado Pago API** (pagamentos PIX e cartão, Checkout Transparente)
 - **pytest** (testes)
-
-**Planejado**
-
-- **Mercado Pago API** (pagamentos PIX e cartão)
 
 ## Arquitetura
 
@@ -61,13 +58,18 @@ Navegador → Frontend React (Vite, :5173) → API REST FastAPI (:8000/api/v1) �
 
 | Funcionalidade | Frontend (rota) | API |
 |---|---|---|
-| Página inicial e instituições parceiras | `/` (pública; a lista exige login) | `GET /instituicoes` · `GET /instituicoes/{id}` |
-| Login (todos os tipos) | `/login` | `POST /auth/login` · `POST /auth/token` (Swagger) |
-| Cadastro de doador | `/cadastro` | `POST /users/auth/register` |
+| Página inicial e instituições parceiras | `/` | `GET /instituicoes` · `GET /instituicoes/{id}` (públicas) |
+| Login (todos os tipos) | `/login` | `POST /auth/login` |
+| Cadastro de doador | `/cadastro` | `POST /auth/register` |
 | Cadastro de instituição (usuário + perfil) | — | `POST /institutions/auth/register` |
-| Fluxo de doação | `/doacoes` (exige login) | — (ainda sem endpoint) |
-| Painel da instituição | `/` com perfil de instituição | — |
-| Encerrar sessão | `/sair` | — |
+| Perfil, troca de senha e desativação | — | `GET/PATCH /users/me` · `POST /users/me/deactivate` |
+| Esqueci minha senha | — | `POST /auth/forgot-password` · `POST /auth/reset-password` |
+| Fluxo de doação | `/doacoes` (exige login) | `POST /doacoes/monetarias` (backend pronto; frontend ainda simula) |
+| Histórico de doações | — | `GET /doacoes/me` · `GET /doacoes/{id}` |
+| Painel da instituição | `/` com perfil de instituição | `GET /instituicoes/me` |
+| Encerrar sessão | `/sair` | `POST /auth/logout` |
+
+A lista completa de rotas está em [backend/README.md](backend/README.md#arquitetura).
 
 ## Estrutura de diretórios
 
@@ -90,10 +92,11 @@ NPET/
 │   ├── app/
 │   │   ├── core/                # configuração, exceções, segurança (bcrypt + JWT)
 │   │   ├── database/            # engine, models e schemas
-│   │   ├── modules/             # auth (usuários e instituições) e instituições
+│   │   ├── integrations/        # cliente do Mercado Pago
+│   │   ├── modules/             # auth, usuários, instituições, doações e pagamentos
 │   │   └── static/              # logos das instituições
 │   ├── migrations/              # Alembic
-│   ├── test/                    # testes (pytest)
+│   ├── scripts/                 # seed das instituições, criação de admin e testes (pytest)
 │   ├── .env.example
 │   ├── requirements.txt
 │   ├── README.md
@@ -117,12 +120,13 @@ cd NPET
 python -m venv .venv
 .venv\Scripts\Activate.ps1          # Windows (PowerShell) ou .venv\Scripts\activate.bat no CMD
 pip install -r requirements.txt
-copy .env.example .env              # e ajuste DATABASE_URL e JWT_SECRET_KEY
-alembic upgrade head                # cria/atualiza as tabelas
-uvicorn app.main:app --reload
+copy .env.example .env              # e ajuste DATABASE_URL, JWT_SECRET_KEY e SEED_PASSWORD
+python -m alembic upgrade head      # cria/atualiza as tabelas
+python -m scripts.db_seed_instituicoes   # popula as 9 instituições de exemplo
+python -m uvicorn app.main:app --reload
 ```
 
-A API sobe em `http://localhost:8000`.
+A API sobe em `http://localhost:8000`. O seed é opcional, mas sem ele a Home fica sem instituições. Ele pode rodar mais de uma vez sem duplicar dados, e cada instituição ganha um login `<slug>@seed.npet.example.com` com a senha de `SEED_PASSWORD`. Detalhes e exemplos de uso da API em [backend/RUN.md](backend/RUN.md).
 
 **2. Frontend** (em outro terminal, dentro de `frontend/`)
 
@@ -167,19 +171,19 @@ npm run preview     # pré-visualiza o build localmente
 3. O `AuthProvider` guarda a sessão e encerra-a quando o token expira. O tipo do usuário vem do backend e define a experiência: instituições veem o painel; doadores, a Home e o fluxo de doação.
 4. As requisições protegidas levam `Authorization: Bearer <token>`. Se a API responder `401`, a sessão é limpa e o usuário volta ao login.
  
-No backend, a dependência `get_current_user` protege as rotas e `require_role(...)` restringe por tipo de usuário (`403`). No Swagger, use o botão **Authorize** (e-mail em `username`, senha em `password`).
+No backend, a dependência `get_current_user` protege as rotas e `require_role(...)` restringe por tipo de usuário (`403`). No Swagger, faça login em `POST /auth/login`; o cookie da resposta passa a valer nas rotas protegidas. O botão **Authorize** está temporariamente sem uso, porque depende de `POST /auth/token`, hoje desativado.
 
 ## Testes
 
 ```bash
 cd backend
-python -m pytest test       # 19 testes de segurança; usa SQLite em memória, não precisa do PostgreSQL
+python -m pytest scripts    # usa SQLite em memória e um Mercado Pago falso; não precisa do PostgreSQL
 ```
 
 ## Próximos passos
 
-- Endpoints de doação, necessidades e redes sociais (os models já existem).
-- Integração de pagamentos com a Mercado Pago API.
+- Integrar o fluxo de doação do frontend à API (campos seguros de cartão do Mercado Pago no lugar da simulação).
+- Endpoints de necessidades, redes sociais e doação de produtos (os models já existem).
 - Refresh token e armazenamento da sessão mais seguro que o `localStorage`.
 - Integração contínua (testes, `tsc` e migrations a cada push).
 
@@ -188,7 +192,7 @@ python -m pytest test       # 19 testes de segurança; usa SQLite em memória, n
 - [frontend/README.md](frontend/README.md) — frontend: tecnologias, estrutura e comandos
 - [backend/README.md](backend/README.md) — backend: arquitetura, rotas, variáveis e autenticação
 - [backend/STARTUP.md](backend/STARTUP.md) — guia detalhado, incluindo a subida do PostgreSQL
-- [backend/RUN.md](backend/RUN.md) — guia rápido de execução do backend
+- [backend/RUN.md](backend/RUN.md) — guia rápido do backend: execução, seed e uso da API
 
 ## Equipe
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import ACCESS_TOKEN_COOKIE, get_current_user, require_admin
 from app.database.database import get_db
 from app.database.models import Usuario
-from app.database.schemas import DesativarContaRequest, UsuarioOut, UsuarioUpdate
+from app.database.schemas import DesativarContaRequest, ExcluirContaRequest, UsuarioOut, UsuarioUpdate
 from app.modules.usuarios.repository import UsuarioRepository
 from app.modules.usuarios.service import UsuarioService
 
@@ -68,13 +68,20 @@ def reactivate_user(
     return service.set_active(id_usuario, True, current_user)
 
 
-@users_router.delete("/me", status_code=204, summary="Exclui o usuário logado")
+@users_router.post(
+    "/me/delete",
+    status_code=204,
+    summary="Exclui a conta do usuário logado (confirma a senha)",
+)
 def delete_me(
+    data: ExcluirContaRequest,
     current_user: Usuario = Depends(get_current_user),
     service: UsuarioService = Depends(get_usuario_service),
 ):
-    service.delete_user(current_user.id_usuario, current_user)
-    return Response(status_code=204)
+    service.delete_me(current_user, data.senha)
+    response = Response(status_code=204)
+    response.delete_cookie(ACCESS_TOKEN_COOKIE)  # encerra a sessão por cookie
+    return response
 
 
 @users_router.get("/{id_usuario}", response_model=UsuarioOut)
