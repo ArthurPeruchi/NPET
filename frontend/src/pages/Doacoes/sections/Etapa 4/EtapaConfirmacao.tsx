@@ -110,6 +110,15 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered, on
         else void processDonation();
     }
 
+    // Com o PIX ainda aguardando pagamento, a saída leva ao histórico: é lá que o código pode ser reaberto.
+    function sair_do_popup() {
+        if (fase_exibida === "pix_gerado" && doacao) {
+            navigate("/historico", { state: { pixPendenteId: doacao.id } });
+        } else {
+            navigate("/");
+        }
+    }
+
     return (
         <div className="confirmacao">
             <h2>Tudo pronto para confirmar sua doação?</h2>
@@ -191,6 +200,12 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered, on
 
             {erro && <p className="confirmacao-erro" role="alert">{erro}</p>}
 
+            {formaPagamento === "pix" && (
+                <p className="confirmacao-nota">
+                    O código PIX tem validade de 30 minutos. Se você fechar a janela, poderá reabri-lo pelo Histórico enquanto não vencer.
+                </p>
+            )}
+
             <Botao
                 variant="primario"
                 size="md"
@@ -208,7 +223,9 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered, on
                     valor_formatado={valor_formatado}
                     onConfirm={() => void processDonation()}
                     onCancel={() => setFase("formulario")}
-                    onFinish={() => navigate("/")}
+                    onFinish={sair_do_popup}
+                    rotulo_saida={fase_exibida === "pix_gerado" ? "Ir para o Histórico" : undefined}
+                    lembrar_historico
                 />
             )}
 

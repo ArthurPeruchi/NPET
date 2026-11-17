@@ -13,6 +13,8 @@ type PopUpDoacaoProps = {
     onConfirm: () => void; // "Confirmar e Doar" (cartão)
     onCancel: () => void; // "Cancelar" / X antes de a doação ser registrada
     onFinish: () => void; // "Voltar ao Início" / X depois de a doação ser registrada
+    rotulo_saida?: string; // texto do botão que chama onFinish (padrão: "Voltar ao Início")
+    lembrar_historico?: boolean; // no PIX, avisa que o código pode ser reaberto pelo histórico depois de fechar
 };
 
 const TEMPO_FEEDBACK_COPIA_MS = 2000;
@@ -48,7 +50,7 @@ function format_expiration(expira_em?: string): string | null {
     return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function PopUpDoacao({ fase, pix, valor_formatado, onConfirm, onCancel, onFinish }: PopUpDoacaoProps) {
+export default function PopUpDoacao({ fase, pix, valor_formatado, onConfirm, onCancel, onFinish, rotulo_saida = "Voltar ao Início", lembrar_historico = false }: PopUpDoacaoProps) {
     const [chave_copiada, set_chave_copiada] = useState(false);
     const [erro_copia, set_erro_copia] = useState(false);
     const timer_ref = useRef<number | null>(null);
@@ -196,11 +198,12 @@ export default function PopUpDoacao({ fase, pix, valor_formatado, onConfirm, onC
                                 )}
 
                                 <p className="popup-texto" role="status">
-                                    Estamos aguardando o pagamento. Assim que ele for identificado, esta janela será atualizada e você receberá uma confirmação por e-mail.
+                                    Assim que o pagamento for identificado, esta janela será atualizada e você receberá um e-mail.
+                                    {lembrar_historico && " Se fechá-la, reabra o código pelo Histórico até ele vencer."}
                                 </p>
 
                                 <Botao variant="secundario" size="md" className="botao-acoes" fullWidth onClick={onFinish}>
-                                    Voltar ao Início
+                                    {rotulo_saida}
                                 </Botao>
                             </>
                         )}
@@ -216,7 +219,7 @@ export default function PopUpDoacao({ fase, pix, valor_formatado, onConfirm, onC
                                         Tentar Novamente
                                     </Botao>
                                     <Botao variant="secundario" size="md" className="btn-acoes" fullWidth onClick={onFinish}>
-                                        Voltar ao Início
+                                        {rotulo_saida}
                                     </Botao>
                                 </div>
                             </>
@@ -230,7 +233,7 @@ export default function PopUpDoacao({ fase, pix, valor_formatado, onConfirm, onC
                                 </p>
 
                                 <Botao variant="primario" size="md" className="btn-acoes" fullWidth onClick={onFinish}>
-                                    Voltar ao Início
+                                    {rotulo_saida}
                                 </Botao>
                             </>
                         )}
@@ -267,7 +270,7 @@ export default function PopUpDoacao({ fase, pix, valor_formatado, onConfirm, onC
                                 </p>
 
                                 <Botao variant="primario" size="md" className="btn-acoes" fullWidth onClick={onFinish}>
-                                    Voltar ao Início
+                                    {rotulo_saida}
                                 </Botao>
                             </>
                         )}

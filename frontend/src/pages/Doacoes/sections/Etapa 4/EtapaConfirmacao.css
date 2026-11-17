@@ -143,6 +143,15 @@
     text-align: center;
 }
 
+.confirmacao-nota {
+    width: min(560px, 92%);
+    margin: 16px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--secondary-body-text-color);
+    text-align: center;
+}
+
 .confirmacao-botao {
     width: min(560px, 92%);
     margin-top: 28px;
