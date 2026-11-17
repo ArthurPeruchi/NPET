@@ -124,7 +124,7 @@ export default function Login() {
                     <button
                         type="button"
                         className="login-link"
-                        onClick={() => {/* TODO */}}
+                        onClick={() => { navigate("/esqueci-senha"); }}
                     >
                         Esqueceu a senha?
                     </button>
