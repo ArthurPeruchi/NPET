@@ -144,6 +144,7 @@ python -m scripts.db_seed_instituicoes
 | `MP_WEBHOOK_SECRET` | para o webhook | — | "Assinatura secreta" da seção Webhooks do painel do MP (sem ela, o webhook responde `503`) |
 | `MP_NOTIFICATION_URL` | não | `https://xxxx.ngrok.app/api/v1/pagamentos/webhook` | URL pública enviada ao MP em cada pagamento |
 | `MP_API_URL` / `MP_PIX_EXPIRATION_MINUTES` | não | `https://api.mercadopago.com` / `30` | Endereço da API e validade do QR Code PIX |
+| `MP_PIX_TEST_APPROVAL` | não | `false` | **Só sandbox.** `true` envia `payer.first_name=APRO` no PIX para o Mercado Pago aprová-lo sozinho. Ignorada com `APP_ENV=production` |
 | `MP_TIMEOUT_SECONDS` / `MP_CONNECT_TIMEOUT_SECONDS` | não | `20` / `5` | Timeout das chamadas ao Mercado Pago (RNF-012) |
 | `MP_MAX_RETRIES` / `MP_RETRY_BACKOFF_SECONDS` | não | `2` / `0.5` | Novas tentativas em falha de rede, `429` ou `5xx`, com espera exponencial (0,5 s, 1 s...). Erros `4xx` não são repetidos |
 
@@ -151,7 +152,10 @@ python -m scripts.db_seed_instituicoes
 
 - **Esqueci minha senha:** `forgot-password` sempre responde `202` (não revela se o e-mail existe). Para contas ativas, gera um token de uso único (só o hash SHA-256 fica no banco, tabela `tokens_redefinicao_senha`), invalida links anteriores e envia o e-mail em segundo plano. `reset-password` recebe `{token, nova_senha}`; token inválido, expirado ou já usado → `400`.
 - **Desativação:** `POST /users/me/deactivate` com `{senha}` marca `usuarios.ativo = false`. Login e tokens já emitidos passam a responder `401` ("Esta conta está desativada."), a instituição some da listagem e o histórico é preservado. Só um admin reativa.
-- **Exclusão:** `POST /users/me/delete` com `{senha}` apaga a conta e encerra a sessão. Senha errada → `400`. Contas com doações ainda não podem ser excluídas (regra de anonimização em definição); use a desativação.
+- **Exclusão:** `POST /users/me/delete` com `{senha}` exclui a conta e encerra a sessão (`204`). Senha errada → `400`. O admin usa `DELETE /users/{id}`, sem senha, com a mesma regra:
+  - **sem doações:** a conta é apagada (a instituição sem doações sai junto);
+  - **com doações:** a conta é **anonimizada**. Nome vira "Usuário removido", e-mail vira `removido-{id}@usuario-removido.npet.com.br`, senha, CPF e telefone são apagados, a conta fica inativa e os lembretes de recorrência são desligados. As doações continuam no histórico, e o e-mail original pode ser usado em um novo cadastro. Conta anonimizada não pode ser reativada (`409`);
+  - **instituição que já recebeu doações:** a exclusão é recusada com `409` (o histórico dos doadores depende dela); use a desativação.
 
 ### Doações e pagamentos (Mercado Pago)
 
@@ -167,7 +171,7 @@ Todo pagamento cai na conta Mercado Pago da NPET; a doação registra a institui
 - **Recorrência:** `recorrente` é só um lembrete (o frontend monta uma nova doação pré-preenchida e o doador confirma); não há cobrança automática.
 - **Status do MP → status da doação:** `approved` → `confirmada`; `pending`/`in_process`/`authorized` → `pendente`; `rejected`/`cancelled`/`refunded`/`charged_back` → `cancelada`.
 
-**Testando no sandbox:** use as credenciais de teste da conta (`MP_ACCESS_TOKEN=TEST-...`). Para cartão, gere um token com a public key de teste (`POST https://api.mercadopago.com/v1/card_tokens?public_key=...` com um cartão de teste do Mercado Pago; titular `APRO` aprova, `OTHE` recusa) e chame `POST /doacoes/monetarias`. Para receber o webhook em dev, exponha a API (ex.: `ngrok http 8000`), configure a URL no painel do MP e copie a assinatura secreta para `MP_WEBHOOK_SECRET`.
+**Testando no sandbox:** use as credenciais de teste da conta (`MP_ACCESS_TOKEN=TEST-...`). Para cartão, gere um token com a public key de teste (`POST https://api.mercadopago.com/v1/card_tokens?public_key=...` com um cartão de teste do Mercado Pago; titular `APRO` aprova, `OTHE` recusa) e chame `POST /doacoes/monetarias`. Para PIX, o QR de teste não pode ser pago: ligue `MP_PIX_TEST_APPROVAL=true`, reinicie a API, gere o PIX e consulte `GET /doacoes/{id}` até a doação virar `confirmada` (a consulta sincroniza com o MP; não precisa de webhook). Para receber o webhook em dev, exponha a API (ex.: `ngrok http 8000`), configure a URL no painel do MP e copie a assinatura secreta para `MP_WEBHOOK_SECRET`.
 
 ### Comandos do Alembic
 
@@ -191,7 +195,7 @@ alembic revision --autogenerate -m "descricao"        # gera migration após alt
 
 O login é único para todos os tipos (`POST /auth/login`) e devolve o token JWT (HS256) junto com o `tipo_usuario`. O token carrega o `id_usuario` em `sub`, o tipo em `tipo_usuario` e a validade em `exp`. As rotas protegidas usam a dependência `get_current_user` ([app/core/dependencies.py](app/core/dependencies.py)), que lê o cabeçalho `Authorization: Bearer <token>` ou, na falta dele, o cookie `access_token` gravado pelo login. Token ausente, inválido, expirado ou de usuário inexistente → `401`. Para restringir uma rota por tipo, use `Depends(require_role(TipoUsuario.instituicao))`, que responde `403` aos demais tipos (`require_admin` é o atalho para administradores). A senha precisa ter de 8 a 72 bytes (limite do bcrypt) e conter ao menos uma letra maiúscula, uma minúscula e um número; fora disso, cadastro, troca e redefinição de senha respondem `422`.
 
-No Swagger (`/docs`), faça login em `POST /auth/login` (**Try it out**): o cookie gravado na resposta passa a ser enviado nas rotas protegidas. Para sair, use `POST /auth/logout`. O botão **Authorize** (cadeado) não funciona no momento, porque depende de `POST /auth/token`, que está desativado. O passo a passo está em [RUN.md](./RUN.md#7-usar-a-api-pelo-swagger).
+No Swagger (`/docs`), faça login em `POST /auth/login` (**Try it out**): o cookie gravado na resposta passa a ser enviado nas rotas protegidas. Para sair, use `POST /auth/logout`. Outra opção é o botão **Authorize** (cadeado): informe o e-mail em *username* e a senha em *password* (ele usa `POST /auth/token`). O passo a passo está em [RUN.md](./RUN.md#7-usar-a-api-pelo-swagger).
 
 ```bash
 # o login devolve {"access_token": "...", "token_type": "bearer", "tipo_usuario": "doador"}
@@ -209,12 +213,10 @@ curl http://localhost:8000/api/v1/users/me -H "Authorization: Bearer SEU_TOKEN"
 python -m pytest scripts
 ```
 
-A suíte fica em `scripts/` (`test_seguranca.py` e `test_doacoes.py`), usa SQLite em memória e um Mercado Pago falso; não precisa do PostgreSQL nem de credenciais.
+A suíte fica em `scripts/` (`test_seguranca.py`, `test_doacoes.py` e `test_exclusao_conta.py`), usa SQLite em memória e um Mercado Pago falso; não precisa do PostgreSQL nem de credenciais.
 
 ## Próximos passos
 
-- Atualizar `scripts/test_seguranca.py` para as rotas atuais (7 testes ainda chamam `/users/auth/register` e `/auth/token`).
-- Reativar `POST /auth/token` (botão **Authorize** do Swagger).
 - CRUD de redes sociais e necessidades (hoje só entram pelo seed) e doação de produtos (models já existem).
 
 ## Documentação adicional

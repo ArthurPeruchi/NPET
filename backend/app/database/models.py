@@ -102,6 +102,9 @@ class Usuario(Base):
     )
     # Conta desativada pelo próprio usuário: bloqueia login/token, mas preserva o histórico.
     ativo: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
+    # Conta excluída que tinha doações: os dados pessoais foram apagados e o registro ficou
+    # só para manter o histórico das doações íntegro.
+    anonimizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     instituicao: Mapped["Instituicao | None"] = relationship(
         back_populates="usuario", uselist=False

@@ -72,6 +72,11 @@ def reactivate_user(
     "/me/delete",
     status_code=204,
     summary="Exclui a conta do usuário logado (confirma a senha)",
+    description=(
+        "Sem doações, a conta é apagada. Com doações, os dados pessoais são anonimizados e o "
+        "histórico das doações é mantido. Conta de instituição que já recebeu doações → 409."
+    ),
+    responses={409: {"description": "Instituição que já recebeu doações (use a desativação)"}},
 )
 def delete_me(
     data: ExcluirContaRequest,
@@ -105,7 +110,12 @@ def update_user(
     return service.update_user(id_usuario, data, current_user)
 
 
-@users_router.delete("/{id_usuario}", status_code=204)
+@users_router.delete(
+    "/{id_usuario}",
+    status_code=204,
+    summary="Exclui um usuário (admin; mesma regra de anonimização da autoexclusão)",
+    responses={409: {"description": "Instituição que já recebeu doações (use a desativação)"}},
+)
 def delete_user(
     id_usuario: int,
     current_user: Usuario = Depends(get_current_user),

@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.database.models import Usuario
+from app.database.models import Doacao, DoacaoDinheiro, Usuario
 
 
 class UsuarioRepository:
@@ -30,6 +30,26 @@ class UsuarioRepository:
         self._db.refresh(usuario)
         return usuario
 
+    def tem_doacoes(self, id_usuario: int) -> bool:
+        stmt = select(Doacao.id_doacao).where(Doacao.id_usuario == id_usuario).limit(1)
+        return self._db.scalar(stmt) is not None
+
+    def desligar_recorrencias(self, id_usuario: int) -> None:
+        """Desliga o lembrete mensal de todas as doações do usuário (sem commit)."""
+        ids_doacoes = select(Doacao.id_doacao).where(Doacao.id_usuario == id_usuario)
+        self._db.execute(
+            update(DoacaoDinheiro)
+            .where(DoacaoDinheiro.id_doacao.in_(ids_doacoes))
+            .values(recorrente=False)
+        )
+
+    def instituicao_tem_doacoes(self, id_instituicao: int) -> bool:
+        stmt = select(Doacao.id_doacao).where(Doacao.id_instituicao == id_instituicao).limit(1)
+        return self._db.scalar(stmt) is not None
+
     def delete(self, usuario: Usuario) -> None:
+        # A instituição (com redes sociais e necessidades, em cascata) sai junto com a conta.
+        if usuario.instituicao is not None:
+            self._db.delete(usuario.instituicao)
         self._db.delete(usuario)
         self._db.commit()

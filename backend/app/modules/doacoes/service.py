@@ -122,7 +122,8 @@ class DoacaoService:
     def _aplicar_e_salvar(self, doacao: Doacao, pagamento: PagamentoMP) -> Doacao:
         confirmou_agora = aplicar_pagamento(doacao, pagamento)
         doacao = self._repository.save(doacao)
-        if confirmou_agora and self._agendar_email:
+        # Conta excluída (anonimizada) depois de gerar o PIX: o status muda, mas não há a quem avisar.
+        if confirmou_agora and self._agendar_email and doacao.usuario.anonimizado_em is None:
             # O texto é montado agora, com a sessão aberta; o envio roda depois da resposta.
             self._agendar_email(*email_de_confirmacao(doacao))
         return doacao

@@ -1,9 +1,11 @@
 from collections.abc import Sequence
+from datetime import datetime, timezone
 
 from app.core.exceptions import AppError, ConflictError, ForbiddenError, NotFoundError
 from app.core.security import hash_password, verify_password
 from app.database.models import TipoUsuario, Usuario
 from app.database.schemas import UsuarioUpdate
+from app.modules.instituicoes.service import MENSAGEM_INSTITUICAO_COM_DOACOES
 from app.modules.usuarios.repository import UsuarioRepository
 
 
@@ -74,6 +76,8 @@ class UsuarioService:
 
     def set_active(self, id_usuario: int, ativo: bool, current_user: Usuario) -> Usuario:
         usuario = self.get_user(id_usuario, current_user)
+        if usuario.anonimizado_em is not None:
+            raise ConflictError("Conta excluída não pode ser reativada.")
         if usuario.id_usuario == current_user.id_usuario and not ativo:
             raise AppError("Use a desativação da própria conta em /users/me/deactivate.")
         usuario.ativo = ativo
@@ -81,8 +85,42 @@ class UsuarioService:
 
     def delete_me(self, current_user: Usuario, senha: str) -> None:
         self._confirmar_senha(current_user, senha)
-        self._repository.delete(current_user)
+        self._excluir(current_user)
 
     def delete_user(self, id_usuario: int, current_user: Usuario) -> None:
         usuario = self.get_user(id_usuario, current_user)
-        self._repository.delete(usuario)
+        self._excluir(usuario)
+
+    def _excluir(self, usuario: Usuario) -> None:
+        """Exclusão de conta (pelo próprio usuário ou pelo admin).
+
+        - Instituição que já recebeu doações: recusada (409); o histórico dos doadores depende dela.
+        - Usuário com doações: anonimizado, para o histórico continuar íntegro sem dados pessoais.
+        - Sem doações: apagado de vez (a instituição sem doações sai junto).
+        """
+        instituicao = usuario.instituicao
+        if instituicao is not None and self._repository.instituicao_tem_doacoes(
+            instituicao.id_instituicao
+        ):
+            raise ConflictError(MENSAGEM_INSTITUICAO_COM_DOACOES)
+
+        if self._repository.tem_doacoes(usuario.id_usuario):
+            self._anonimizar(usuario)
+        else:
+            self._repository.delete(usuario)
+
+    def _anonimizar(self, usuario: Usuario) -> None:
+        usuario.nome = "Usuário removido"
+        # Único por usuário (a coluna é unique) e fora de qualquer caixa de e-mail real;
+        # libera o e-mail original para um novo cadastro.
+        usuario.email = f"removido-{usuario.id_usuario}@usuario-removido.npet.com.br"
+        usuario.senha = None
+        usuario.telefone = None
+        usuario.cpf = None
+        usuario.provider = "local"
+        usuario.provider_id = None
+        usuario.ativo = False
+        usuario.anonimizado_em = datetime.now(timezone.utc)
+        usuario.tokens_redefinicao.clear()
+        self._repository.desligar_recorrencias(usuario.id_usuario)
+        self._repository.update(usuario)

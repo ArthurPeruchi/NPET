@@ -5,6 +5,11 @@ from app.database.models import Instituicao, TipoUsuario, Usuario
 from app.modules.instituicoes.repository import InstituicaoRepository
 from app.modules.instituicoes.schemas import InstituicaoCreate, InstituicaoUpdate
 
+# Usada também na exclusão da conta da instituição (modules/usuarios).
+MENSAGEM_INSTITUICAO_COM_DOACOES = (
+    "Esta instituição já recebeu doações e não pode ser excluída; use a desativação da conta."
+)
+
 
 class InstituicaoService:
     def __init__(self, repository: InstituicaoRepository) -> None:
@@ -79,4 +84,6 @@ class InstituicaoService:
     def delete_instituicao(self, id_instituicao: int, current_user: Usuario) -> None:
         instituicao = self.get_instituicao(id_instituicao)
         self._check_owner_or_admin(instituicao, current_user)
+        if self._repository.tem_doacoes(instituicao.id_instituicao):
+            raise ConflictError(MENSAGEM_INSTITUICAO_COM_DOACOES)
         self._repository.delete(instituicao)

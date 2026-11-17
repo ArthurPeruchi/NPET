@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import ConflictError
-from app.database.models import Instituicao, Usuario
+from app.database.models import Doacao, Instituicao, Usuario
 
 # Carrega redes sociais e necessidades junto, evitando N+1 na montagem da resposta.
 _COM_RELACIONAMENTOS = (
@@ -55,6 +55,10 @@ class InstituicaoRepository:
         self._db.commit()
         self._db.refresh(instituicao)
         return instituicao
+
+    def tem_doacoes(self, id_instituicao: int) -> bool:
+        stmt = select(Doacao.id_doacao).where(Doacao.id_instituicao == id_instituicao).limit(1)
+        return self._db.scalar(stmt) is not None
 
     def delete(self, instituicao: Instituicao) -> None:
         try:
