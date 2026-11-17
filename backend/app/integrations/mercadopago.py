@@ -61,6 +61,12 @@ class MercadoPagoGateway:
         corpo = self._corpo_base(id_doacao, valor, descricao, email_pagador)
         corpo["payment_method_id"] = "pix"
         corpo["date_of_expiration"] = expira_em.isoformat(timespec="milliseconds")
+        if settings.MP_PIX_TEST_APPROVAL:
+            if settings.is_production:
+                logger.warning("MP_PIX_TEST_APPROVAL ignorada: só vale fora de produção.")
+            else:
+                # Atalho do ambiente de teste do MP: pagador "APRO" aprova o PIX automaticamente.
+                corpo["payer"]["first_name"] = "APRO"
         return self._criar(corpo, id_doacao)
 
     def create_card_payment(

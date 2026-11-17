@@ -373,6 +373,47 @@ def test_cliente_mp_sem_credencial_retorna_502():
         MercadoPagoGateway(access_token="").get_payment("1")
 
 
+# ---------- aprovação automática do PIX no sandbox (MP_PIX_TEST_APPROVAL) ----------
+
+def _payer_enviado(monkeypatch, forma: str) -> dict:
+    import httpx
+    from decimal import Decimal
+    from app.integrations.mercadopago import MercadoPagoGateway
+
+    chamadas = _respostas_em_sequencia(monkeypatch, httpx.Response(201, json={"id": 1, "status": "pending"}))
+    gateway_real = MercadoPagoGateway(access_token="TEST-1")
+    comum = {"id_doacao": 1, "valor": Decimal("10.00"), "descricao": "x", "email_pagador": "d@npet.org"}
+    if forma == "pix":
+        gateway_real.create_pix_payment(**comum)
+    else:
+        gateway_real.create_card_payment(**comum, card_token="tok", payment_method_id="visa")
+    assert len(chamadas) == 1
+    return chamadas[0]["json"]["payer"]
+
+
+def test_pix_sem_a_flag_envia_so_o_email(monkeypatch):
+    monkeypatch.setattr(settings, "MP_PIX_TEST_APPROVAL", False)
+    assert _payer_enviado(monkeypatch, "pix") == {"email": "d@npet.org"}
+
+
+def test_pix_com_a_flag_em_desenvolvimento_envia_apro(monkeypatch):
+    monkeypatch.setattr(settings, "MP_PIX_TEST_APPROVAL", True)
+    monkeypatch.setattr(settings, "APP_ENV", "development")
+    assert _payer_enviado(monkeypatch, "pix") == {"email": "d@npet.org", "first_name": "APRO"}
+
+
+def test_flag_e_ignorada_em_producao(monkeypatch):
+    monkeypatch.setattr(settings, "MP_PIX_TEST_APPROVAL", True)
+    monkeypatch.setattr(settings, "APP_ENV", "production")
+    assert _payer_enviado(monkeypatch, "pix") == {"email": "d@npet.org"}
+
+
+def test_flag_nao_afeta_o_cartao(monkeypatch):
+    monkeypatch.setattr(settings, "MP_PIX_TEST_APPROVAL", True)
+    monkeypatch.setattr(settings, "APP_ENV", "development")
+    assert _payer_enviado(monkeypatch, "cartao") == {"email": "d@npet.org"}
+
+
 # ---------- data da confirmação e aviso ao doador (RNE-003 / RNE-013) ----------
 
 def test_pix_pendente_nao_tem_data_de_confirmacao_nem_email(client, gateway, instituicao, doador, emails):
@@ -479,7 +520,7 @@ def _respostas_em_sequencia(monkeypatch, *itens):
     chamadas: list[dict] = []
 
     def falso_request(metodo, url, headers, timeout, **kwargs):
-        chamadas.append({"metodo": metodo, "headers": headers, "timeout": timeout})
+        chamadas.append({"metodo": metodo, "headers": headers, "timeout": timeout, "json": kwargs.get("json")})
         item = fila.pop(0)
         if isinstance(item, Exception):
             raise item

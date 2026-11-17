@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     MP_NOTIFICATION_URL: str | None = None  # URL pública de /pagamentos/webhook; vazia em dev
     MP_API_URL: str = "https://api.mercadopago.com"
     MP_PIX_EXPIRATION_MINUTES: int = 30
+    # Só sandbox: envia payer.first_name="APRO" para o MP aprovar o PIX sozinho. Ignorada em produção.
+    MP_PIX_TEST_APPROVAL: bool = False
     # Timeout e retry das chamadas ao Mercado Pago (RNF-012). O retry vale para falhas de rede,
     # 429 e 5xx; a chave de idempotência por doação impede cobrança em dobro ao repetir a criação.
     MP_TIMEOUT_SECONDS: float = 20.0
