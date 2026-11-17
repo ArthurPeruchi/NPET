@@ -12,9 +12,18 @@ type CardDoacaoProps = {
     donation: DoacaoRegistrada;
     institution?: Instituicao;
     on_view_feedback: () => void;
+    on_view_pix: () => void;
     on_repeat: () => void;
     on_toggle_recurrence: () => void;
+    destacada?: boolean; // card chamado pelo aviso do histórico (ex.: PIX aguardando pagamento)
 };
+
+// Horário (HH:MM) em que o código PIX deixa de valer.
+function format_expiration(expira_em?: string): string | null {
+    if (!expira_em) return null;
+    const date = new Date(expira_em);
+    return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
 
 const ICONE_CHECK = (
     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -90,17 +99,24 @@ export default function CardDoacao({
     donation,
     institution,
     on_view_feedback,
+    on_view_pix,
     on_repeat,
     on_toggle_recurrence,
+    destacada = false,
 }: CardDoacaoProps) {
     const nome_instituicao = institution?.nome ?? `Instituição #${donation.idInstituicao}`;
     const tem_feedback = Boolean(donation.feedback);
     const tem_feedback_novo = tem_feedback && !donation.feedbackVisto;
     const pode_repetir = institution?.aceitaDoacoes === true;
+    const pode_ver_pix = donation.tipoDoacao === "monetaria" && donation.status === "pendente" && donation.pix !== undefined; // PIX aguardando pagamento e ainda dentro do prazo
+    const vencimento_pix = pode_ver_pix && donation.tipoDoacao === "monetaria" ? format_expiration(donation.pix?.expiraEm) : null;
+    const mostrar_feedback = donation.status === "confirmada" || tem_feedback; // Feedback só faz sentido numa doação concluída;
+    const mostrar_repetir = donation.status !== "pendente"; // Doação aguardando pagamento não se repete (evita cobrança duplicada); cancelada é "retentada".
+    const rotulo_repetir = donation.status === "cancelada" ? "Retentar Doação" : "Repetir Doação";
     const data_transacao = donation.confirmadaEm ?? donation.criadaEm; // Data em que o pagamento foi aprovado; enquanto pendente ou cancelada, vale a data de criação.
 
     return (
-        <article className="card-doacao" aria-label={`Doação para ${nome_instituicao}`}>
+        <article id={`doacao-${donation.id}`} className={`card-doacao${destacada ? " card-doacao--destaque" : ""}`} aria-label={`Doação para ${nome_instituicao}`}>
             {tem_feedback_novo && (
                 <button
                     type="button"
@@ -146,7 +162,7 @@ export default function CardDoacao({
                             />
                             {/* Só doações concluídas podem ganhar recorrência; desativar vale sempre. */}
                             {(donation.recorrente || donation.status === "confirmada") && (
-                                <Botao variant="primario" size="md" className="botao-acoes" onClick={on_toggle_recurrence}>
+                                <Botao variant="primario" size="md" className="botao-recorrencia" onClick={on_toggle_recurrence}>
                                     {donation.recorrente ? "Desativar" : "Ativar"}
                                 </Botao>
                             )}
@@ -177,12 +193,26 @@ export default function CardDoacao({
             </div>
 
             <div className="card-doacao-acoes">
-                <Botao variant="primario" size="md" className="botao-acoes" fullWidth disabled={!tem_feedback} onClick={on_view_feedback}>
-                    Ver Feedback da Doação
-                </Botao>
-                <Botao variant="secundario" size="md" className="botao-acoes" fullWidth disabled={!pode_repetir} onClick={on_repeat}>
-                    Repetir Doação
-                </Botao>
+                {pode_ver_pix && (
+                    <>
+                        {vencimento_pix && (
+                            <p className="card-doacao-vencimento">Código PIX válido até as {vencimento_pix}.</p>
+                        )}
+                        <Botao variant="primario" size="md" className="botao-acoes" fullWidth onClick={on_view_pix}>
+                            Ver Código PIX
+                        </Botao>
+                    </>
+                )}
+                {mostrar_feedback && (
+                    <Botao variant="primario" size="md" className="botao-acoes" fullWidth disabled={!tem_feedback} onClick={on_view_feedback}>
+                        Ver Feedback da Doação
+                    </Botao>
+                )}
+                {mostrar_repetir && (
+                    <Botao variant="secundario" size="md" className="botao-acoes" fullWidth disabled={!pode_repetir} onClick={on_repeat}>
+                        {rotulo_repetir}
+                    </Botao>
+                )}
             </div>
         </article>
     );
