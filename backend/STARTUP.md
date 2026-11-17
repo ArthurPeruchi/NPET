@@ -152,7 +152,7 @@ curl http://localhost:8000/api/v1/users/me -H "Authorization: Bearer SEU_TOKEN"
 
 Sem token, com token inválido ou expirado → `401`.
 
-No Swagger (`/docs`), faça login em `POST /auth/login`: o cookie gravado na resposta passa a valer nas rotas protegidas. O botão **Authorize** (cadeado) não funciona no momento, porque depende de `POST /auth/token`, que está desativado. Mais exemplos de uso em [RUN.md](RUN.md#7-usar-a-api-pelo-swagger).
+No Swagger (`/docs`), faça login em `POST /auth/login`: o cookie gravado na resposta passa a valer nas rotas protegidas. Outra opção é o botão **Authorize** (cadeado): informe o e-mail em *username* e a senha em *password* (ele usa `POST /auth/token`). Mais exemplos de uso em [RUN.md](RUN.md#7-usar-a-api-pelo-swagger).
 
 A suíte automatizada fica em `scripts/` (`test_seguranca.py` e `test_doacoes.py`) e roda com `python -m pytest scripts` (usa SQLite em memória e um Mercado Pago falso; não precisa do PostgreSQL).
 

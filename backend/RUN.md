@@ -85,7 +85,7 @@ Abra **http://localhost:8000/docs**: cada rota tem o botão **Try it out** para 
 2. **Faça login** em `POST /auth/login` com `{"email": "...", "senha": "..."}`. A resposta traz o token e também grava um cookie de sessão; a partir daí, o Swagger já envia o cookie nas rotas protegidas.
 3. Chame as rotas protegidas, ex.: `GET /users/me`.
 
-> Não use o botão **Authorize** (cadeado) do Swagger: ele depende de `POST /auth/token`, que está desativado no momento.
+> Também dá para usar o botão **Authorize** (cadeado) do Swagger: preencha *username* com o e-mail e *password* com a senha. Ele chama `POST /auth/token` e envia o token nas rotas protegidas.
 
 Outros endereços:
 

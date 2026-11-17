@@ -14,15 +14,16 @@ API = "/api/v1"
 
 
 def corpo_de_cadastro(tipo_usuario: str, email: str) -> tuple[str, dict]:
+    """Devolve (rota de cadastro, corpo). Doador: /auth/register; instituição: /institutions/auth/register."""
     if tipo_usuario == "instituicao":
-        return "institutions", {"nome": "ASPAAN", "email": email, "senha": "Senha1234", "cidade": "Anápolis", "uf": "GO"}
-    return "users", {"nome": "Teste", "email": email, "senha": "Senha1234", "tipo_usuario": tipo_usuario}
+        return "institutions/auth/register", {"nome": "ASPAAN", "email": email, "senha": "Senha1234", "cidade": "Anápolis", "uf": "GO"}
+    return "auth/register", {"nome": "Teste", "email": email, "senha": "Senha1234", "tipo_usuario": tipo_usuario}
 
 
 def cadastrar_e_logar(client, tipo_usuario: str) -> dict:
     email = f"{tipo_usuario}@npet.org"
-    prefixo, corpo = corpo_de_cadastro(tipo_usuario, email)
-    assert client.post(f"{API}/{prefixo}/auth/register", json=corpo).status_code == 201
+    rota, corpo = corpo_de_cadastro(tipo_usuario, email)
+    assert client.post(f"{API}/{rota}", json=corpo).status_code == 201
     resposta = client.post(f"{API}/auth/login", json={"email": email, "senha": "Senha1234"})
     assert resposta.status_code == 200
     return resposta.json()
@@ -76,7 +77,16 @@ def test_login_unico_devolve_token_e_role(client, tipo_usuario):
 
 @pytest.mark.parametrize("tipo_usuario", ["doador", "instituicao"])
 def test_token_valido_acessa_rotas_protegidas(client, tipo_usuario):
+    # As instituições vêm do banco: garante que exista ao menos uma (a do próprio usuário, se for instituição).
+    if tipo_usuario == "doador":
+        rota, corpo = corpo_de_cadastro("instituicao", "ong@npet.org")
+        assert client.post(f"{API}/{rota}", json=corpo).status_code == 201
     headers = {"Authorization": f"Bearer {cadastrar_e_logar(client, tipo_usuario)['access_token']}"}
+    client.cookies.clear()  # garante que o acesso vem do header, não do cookie do login
+
+    me = client.get(f"{API}/users/me", headers=headers)
+    assert me.status_code == 200
+    assert me.json()["tipo_usuario"] == tipo_usuario
 
     lista = client.get(f"{API}/instituicoes", headers=headers)
     assert lista.status_code == 200
@@ -136,7 +146,7 @@ def test_cadastro_de_instituicao_duplicado_retorna_409(client, campo, valor):
 
 
 def test_senha_acima_de_72_bytes_retorna_422(client):
-    resposta = client.post(f"{API}/users/auth/register", json={
+    resposta = client.post(f"{API}/auth/register", json={
         "nome": "Teste", "email": "acento@npet.org", "senha": "ç" * 40, "tipo_usuario": "doador",
     })
     assert resposta.status_code == 422

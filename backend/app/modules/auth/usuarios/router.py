@@ -77,6 +77,11 @@ def reset_password(data: RedefinirSenhaRequest, service: AuthService = Depends(g
     return Response(status_code=204)
 
 
-#@auth_router.post("/token", response_model=LoginResponse, summary="Login via formulário OAuth2 (usado pelo Authorize do Swagger)")
-#def token(form: OAuth2PasswordRequestForm = Depends(), service: AuthService = Depends(get_auth_service)):
-#    return service.login(form.email, form.senha)*/
+@auth_router.post(
+    "/token",
+    response_model=LoginResponse,
+    summary="Login via formulário OAuth2 (usado pelo Authorize do Swagger)",
+)
+def token(form: OAuth2PasswordRequestForm = Depends(), service: AuthService = Depends(get_auth_service)):
+    # O padrão OAuth2 chama os campos de "username" e "password"; aqui o username é o e-mail.
+    return service.login(form.username, form.password)

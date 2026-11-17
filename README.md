@@ -171,7 +171,7 @@ npm run preview     # pré-visualiza o build localmente
 3. O `AuthProvider` guarda a sessão e encerra-a quando o token expira. O tipo do usuário vem do backend e define a experiência: instituições veem o painel; doadores, a Home e o fluxo de doação.
 4. As requisições protegidas levam `Authorization: Bearer <token>`. Se a API responder `401`, a sessão é limpa e o usuário volta ao login.
  
-No backend, a dependência `get_current_user` protege as rotas e `require_role(...)` restringe por tipo de usuário (`403`). No Swagger, faça login em `POST /auth/login`; o cookie da resposta passa a valer nas rotas protegidas. O botão **Authorize** está temporariamente sem uso, porque depende de `POST /auth/token`, hoje desativado.
+No backend, a dependência `get_current_user` protege as rotas e `require_role(...)` restringe por tipo de usuário (`403`). No Swagger, faça login em `POST /auth/login`; o cookie da resposta passa a valer nas rotas protegidas. Outra opção é o botão **Authorize** (cadeado): informe o e-mail em *username* e a senha em *password* (ele usa `POST /auth/token`).
 
 ## Testes
 
