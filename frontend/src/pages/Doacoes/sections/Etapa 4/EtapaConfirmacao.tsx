@@ -5,7 +5,9 @@ import Botao from "../../../../components/Botao/Botao";
 import ModalConfirmacao from "../../../../components/ModalConfirmacao/ModalConfirmacao";
 import PopUpDoacao, { type FasePopUp } from "./PopUpDoacao/PopUpDoacao";
 import { register_donation } from "../../../../services/doacoesService";
-import type { DadosDoacaoMonetaria, Instituicao } from "../../../../types/domain";
+import { ApiError } from "../../../../services/apiClient";
+import useAcompanharPagamento from "../../../../hooks/useAcompanharPagamento";
+import type { DadosDoacaoMonetaria, DoacaoMonetaria, Instituicao } from "../../../../types/domain";
 import "./EtapaConfirmacao.css";
 import { IconePix, IconeCartaoCredito } from "../../../../components/IconePagamento/IconePagamento";
 import { format_currency } from "../../../../utils/moeda";
@@ -15,6 +17,7 @@ type EtapaConfirmacaoProps = {
     dados: DadosDoacaoMonetaria;
     instituicao: Instituicao;
     on_registered?: () => void;
+    on_card_declined?: (motivo: string) => void; // cartão recusado ou token inválido: volta para a etapa dos detalhes
 };
 
 type FaseConfirmacao = "formulario" | FasePopUp;
@@ -25,7 +28,7 @@ const IconeInformacao = () => (
     </svg>
 )
 
-export default function EtapaConfirmacao({ dados, instituicao, on_registered }: EtapaConfirmacaoProps) {
+export default function EtapaConfirmacao({ dados, instituicao, on_registered, on_card_declined }: EtapaConfirmacaoProps) {
     const navigate = useNavigate();
 
     const [recorrente, setRecorrente] = useState<boolean>(dados.recorrente ?? false);
@@ -33,6 +36,14 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered }: 
     const [fase, setFase] = useState<FaseConfirmacao>("formulario");
     const [dialogoRecorrencia, setDialogoRecorrencia] = useState<boolean>(false);
     const [erro, setErro] = useState<string | null>(null);
+    const [doacao, setDoacao] = useState<DoacaoMonetaria | null>(null);
+
+    // Com o PIX gerado, consulta a doação até o pagamento ser identificado (ou o código expirar).
+    const status_pix = useAcompanharPagamento(doacao?.id ?? null, fase === "pix_gerado");
+    const fase_exibida: FaseConfirmacao =
+        fase === "pix_gerado" && status_pix === "confirmada" ? "concluida"
+        : fase === "pix_gerado" && status_pix === "cancelada" ? "pix_expirado"
+        : fase;
 
     const formaPagamento = dados.formaPagamento;
     const valor = dados.valor ?? 0;
@@ -42,24 +53,43 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered }: 
     async function processDonation() {
         if (!formaPagamento || dados.idInstituicao === null) return;
 
+        // O token do cartão só existe se o usuário passou pela etapa dos detalhes.
+        if (Cartao && !dados.cardToken) {
+            on_card_declined?.("Informe os dados do cartão novamente para continuar.");
+            return;
+        }
+
         setErro(null);
         setFase("processando");
 
         try {
-            await register_donation({
+            const registrada = await register_donation({
                 idInstituicao: dados.idInstituicao,
                 valor,
                 formaPagamento: formaPagamento,
                 recorrente,
+                cardToken: dados.cardToken,
+                paymentMethodId: dados.paymentMethodId,
                 cartaoFinal: dados.cartaoFinal,
             });
+
+            setDoacao(registrada);
 
             // Libera a saída da página sem o pop-up perguntando se o usuário realmente quer sair
             on_registered?.();
 
-            setFase(Cartao ? "concluida" : "pix_gerado");  
+            if (!Cartao) setFase("pix_gerado");
+            else setFase(registrada.status === "confirmada" ? "concluida" : "em_analise");
         } catch (e) {
-            setErro(e instanceof Error ? e.message : "Não foi possível registrar sua doação.");
+            const mensagem = e instanceof Error ? e.message : "Não foi possível registrar sua doação.";
+
+            // 402 (cartão recusado) e 422 (token inválido ou já usado): é preciso digitar o cartão de novo.
+            if (Cartao && e instanceof ApiError && (e.status === 402 || e.status === 422)) {
+                on_card_declined?.(mensagem);
+                return;
+            }
+
+            setErro(mensagem);
             setFase("formulario");
         }
     }
@@ -120,7 +150,7 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered }: 
                     <CampoTexto
                         label="Cartão Utilizado"
                         variante="exibicao"
-                        value={dados.cartaoFinal ? `Cartão com final ${dados.cartaoFinal}` : ""}
+                        value={dados.cartaoFinal ? `Cartão com final ${dados.cartaoFinal}` : "Cartão informado"}
                     />
                 )}
             </div>
@@ -171,9 +201,10 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered }: 
                 Confirmar Doação
             </Botao>
 
-            {fase !== "formulario" && (
+            {fase_exibida !== "formulario" && (
                 <PopUpDoacao
-                    fase={fase}
+                    fase={fase_exibida}
+                    pix={doacao?.pix}
                     valor_formatado={valor_formatado}
                     onConfirm={() => void processDonation()}
                     onCancel={() => setFase("formulario")}
