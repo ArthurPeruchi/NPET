@@ -88,6 +88,27 @@
     box-shadow: 0 4px 16px rgba(38, 130, 93, 0.1);
 }
 
+.card-doacao--destaque {
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 3px rgba(26, 110, 84, 0.25), 0 4px 16px rgba(38, 130, 93, 0.2);
+    animation: card-doacao-pulso 1.2s ease-in-out 2;
+}
+
+@keyframes card-doacao-pulso {
+    50% { box-shadow: 0 0 0 7px rgba(26, 110, 84, 0.15), 0 4px 16px rgba(38, 130, 93, 0.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card-doacao--destaque { animation: none; }
+}
+
+.card-doacao-vencimento {
+    margin: 0;
+    font-size: 14px;
+    color: var(--secondary-body-text-color);
+    text-align: center;
+}
+
 .card-doacao-cabecalho {
     display: flex;
     align-items: center;
@@ -176,7 +197,7 @@
     padding: 10px 16px;
 }
 
-.botao-acoes {
+.botao-acoes, .botao-recorrencia {
     height: 50px;
 }
 

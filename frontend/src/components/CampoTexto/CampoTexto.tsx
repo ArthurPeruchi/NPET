@@ -21,6 +21,7 @@ type CampoTextoProps = {
     onChange?: (valor: string) => void;
     maxValor?: number;
     icone?: ReactNode;
+    complemento?: ReactNode; // conteúdo extra no fim do campo (ex.: a taxa estimada do gateway)
     disabled?: boolean;
     required?: boolean;
     erro?: string;
@@ -101,6 +102,7 @@ export default function CampoTexto({
     onChange,
     maxValor,
     icone,
+    complemento,
     disabled = false,
     required = false,
     erro,
@@ -220,6 +222,10 @@ export default function CampoTexto({
                             autoComplete={autoComplete}
                             inputMode={inputMode}
                         />
+                    )}
+
+                    {complemento && (
+                        <div className="campo-texto-complemento">{complemento}</div>
                     )}
 
                     {variante === "senha" && !modoExibicao && (

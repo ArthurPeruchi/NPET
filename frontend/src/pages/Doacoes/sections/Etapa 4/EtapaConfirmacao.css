@@ -69,6 +69,7 @@
 .confirmacao-info {
     display: flex;
     padding: 0;
+    align-self: end;
     background: none;
     border: none;
     border-radius: 50%;
@@ -88,13 +89,12 @@
 
 .confirmacao-checkbox {
     display: flex;
-    align-items: center;
+    align-items: end;
     gap: 10px;
     font-size: 14px;
     color: var(--body-text-color);
     cursor: pointer;
 }
-
 
 .confirmacao-checkbox input {
     appearance: none;
@@ -140,6 +140,15 @@
     margin: 16px 0 0;
     font-size: 14px;
     color: var(--error-color);
+    text-align: center;
+}
+
+.confirmacao-nota {
+    width: min(560px, 92%);
+    margin: 16px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--secondary-body-text-color);
     text-align: center;
 }
 

@@ -97,7 +97,7 @@ export default function Cadastro() {
 
         setCarregando(true);
         try {
-            const response = await fetch(`${api_url}/users/auth/register`, {
+            const response = await fetch(`${api_url}/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

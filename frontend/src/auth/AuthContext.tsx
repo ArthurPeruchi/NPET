@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { TipoUsuario } from "../types/domain";
+import type { Session, TipoUsuario } from "../types/domain";
 import { AuthContext } from "./useAuth";
-import {ROLE_KEY, TOKEN_KEY, UNAUTHORIZED_EVENT, clear_session,
-        get_token_expiration_ms, read_session, save_session, type Session,
-} from "./auth_storage";
+import useInatividade from "./useInatividade";
+import AvisoInatividade from "./AvisoInatividade";
+import {ROLE_KEY, TOKEN_KEY, UNAUTHORIZED_EVENT, clear_session, get_token_expiration_ms, read_session, save_session} from "./auth_storage";
 
 // Maior atraso aceito pelo setTimeout (~24,8 dias).
 const MAX_TIMEOUT_MS = 2_147_483_647;
@@ -52,6 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => window.clearTimeout(timer_id);
     }, [session, logout]);
 
+    // Desconecta após 15 minutos sem atividade, avisando quando faltam 3.
+    const { segundos_restantes, continuar } = useInatividade(session !== null, logout);
+
     const value = useMemo(
         () => ({
             token: session?.token ?? null,
@@ -63,5 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         [session, login, logout]
     );
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+            {segundos_restantes !== null && (
+                <AvisoInatividade
+                    segundos_restantes={segundos_restantes}
+                    on_continue={continuar}
+                    on_logout={logout}
+                />
+            )}
+        </AuthContext.Provider>
+    );
 }

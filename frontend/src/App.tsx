@@ -10,6 +10,8 @@ import Sair from "./auth/Sair";
 import Home from './pages/Home/Home';
 import Login from './pages/Login/Login';
 import Cadastro from './pages/Cadastro/Cadastro';
+import EsqueciSenha from './pages/EsqueciSenha/EsqueciSenha';
+import RedefinirSenha from './pages/RedefinirSenha/RedefinirSenha';
 
 // Páginas protegidas
 import Doacoes from './pages/Doacoes/Doacoes';
@@ -36,6 +38,8 @@ const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/login", element: <RotaAnonima><Login /></RotaAnonima> },
       { path: "/cadastro", element: <RotaAnonima><Cadastro /></RotaAnonima> },
+      { path: "/esqueci-senha", element: <RotaAnonima><EsqueciSenha /></RotaAnonima> },
+      { path: "/redefinir-senha", element: <RedefinirSenha /> },
       { path: "/sair", element: <Sair /> },
 
       // Rotas protegidas

@@ -4,6 +4,10 @@ import CampoTexto from "../../../../../components/CampoTexto/CampoTexto";
 import Botao from "../../../../../components/Botao/Botao";
 import { IconePix, IconeCartaoCredito } from "../../../../../components/IconePagamento/IconePagamento";
 import { useState } from "react";
+import TaxaMercadoPago from "../../../../../components/TaxaMercadoPago/TaxaMercadoPago";
+import usePerfil from "../../../../../hooks/usePerfil";
+import useCartaoSeguro, { ID_CAMPO_CVV, ID_CAMPO_NUMERO, ID_CAMPO_VALIDADE } from "../../../../../hooks/useCartaoSeguro";
+import { format_cpf } from "../../../../../utils/formatacao";
 import "./EtapaDetalhesMonetaria.css"
 
 const OPCOES_PAGAMENTO: OpcaoDropdown<FormaPagamento>[] = [
@@ -11,14 +15,24 @@ const OPCOES_PAGAMENTO: OpcaoDropdown<FormaPagamento>[] = [
     { valor: "cartao_credito", label: "Cartão de Crédito", icone: <IconeCartaoCredito /> },
 ];
 
+const CPF_LENGTH = 11;
+
+function only_digits(raw: string): string {
+    return raw.replace(/\D/g, "");
+}
+
 export type EtapaDetalhesMonetariaProps = {
     dados: DadosDoacaoMonetaria;
     onAvancar: (detalhes: DadosDoacaoMonetaria) => void;
+    aviso?: string; // ex.: motivo da recusa do cartão, quando o usuário volta da confirmação
 }
 
 type ErrosFormulario = {
     valorDoacao?: string;
     formaPagamento?: string;
+    nomeCartao?: string;
+    cpfTitular?: string;
+    cartao?: string;
 };
 
 // Reexibe no campo o valor já salvo (quando o usuário volta da confirmação).
@@ -26,17 +40,41 @@ function formatarValorSalvo(valor?: number): string {
     return valor ? valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "";
 }
 
-export default function EtapaDetalhesMonetaria({ dados, onAvancar }: EtapaDetalhesMonetariaProps) {
+// Campo de cartão seguro: a caixa é nossa, mas o conteúdo é um iframe do Mercado Pago.
+function CampoSeguroCartao({ label, container_id, className }: { label: string; container_id: string; className?: string }) {
+    return (
+        <div className={`campo-texto ${className ?? ""}`}>
+            <fieldset className="campo-texto-fieldset">
+                <legend className="campo-texto-legend">{label}</legend>
+                <div id={container_id} className="campo-seguro-container" />
+            </fieldset>
+        </div>
+    );
+}
+
+export default function EtapaDetalhesMonetaria({ dados, onAvancar, aviso }: EtapaDetalhesMonetariaProps) {
     const [valorDoacao, setValorDoacao] = useState<string>(() => formatarValorSalvo(dados.valor));
     const [formaPagamento, setFormaPagamento] = useState<FormaPagamento | null>(dados.formaPagamento ?? null);
     const [nomeCartao, setNomeCartao] = useState<string>("");
-    const [numeroCartao, setNumeroCartao] = useState<string>("");
-    const [dataValidade, setDataValidade] = useState<string>("");
-    const [cvv, setCvv] = useState<string>("");
+    const [cpfEditado, setCpfEditado] = useState<string | null>(null); // null = ainda não editado
     const [erros, setErros] = useState<ErrosFormulario>({});
+    const [gerandoToken, setGerandoToken] = useState<boolean>(false);
 
-    const incompleto = !valorDoacao || !formaPagamento 
-        || (formaPagamento === "cartao_credito" && ((!nomeCartao) || !numeroCartao || !dataValidade || !cvv));
+    const cartao = formaPagamento === "cartao_credito";
+
+    // O CPF do titular começa com o do perfil do usuário, se houver.
+    const { perfil } = usePerfil();
+    const cpfTitular = cpfEditado ?? format_cpf(perfil?.cpf ?? "");
+
+    // Os campos seguros só são montados quando o cartão está selecionado.
+    const { pronto, erro_sdk, create_token } = useCartaoSeguro(cartao);
+
+    // A taxa só aparece com um valor válido e a forma de pagamento escolhida (e acompanha o que o usuário digita).
+    const valor_digitado = converterParaNumero(valorDoacao);
+    const mostrar_taxa = formaPagamento !== null && valor_digitado >= 1 && valor_digitado <= 10000;
+
+    const incompleto = !valorDoacao || !formaPagamento
+        || (cartao && (!nomeCartao.trim() || only_digits(cpfTitular).length < CPF_LENGTH || !pronto));
 
     function converterParaNumero(valor: string): number {
         return Number(
@@ -48,7 +86,7 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar }: EtapaDetalh
         ) || 0;
     }
 
-    function handleAvancar() {
+    async function handleAvancar() {
         const valor = converterParaNumero(valorDoacao);
 
         const novosErros: ErrosFormulario = {};
@@ -60,7 +98,6 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar }: EtapaDetalh
             novosErros.valorDoacao = "O valor máximo permitido para doação é R$ 10.000,00.";
         }
 
-
         if (valor < 1) {
             novosErros.valorDoacao = "O valor mínimo permitido para doação é R$ 1,00.";
         }
@@ -68,31 +105,56 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar }: EtapaDetalh
         if (!formaPagamento) {
             novosErros.formaPagamento = "Selecione uma forma de pagamento.";
         }
+
+        if (cartao && only_digits(cpfTitular).length !== CPF_LENGTH) {
+            novosErros.cpfTitular = "Informe o CPF completo do titular do cartão.";
+        }
+
         setErros(novosErros);
-    
+
         if (Object.keys(novosErros).length > 0 || !formaPagamento) {
             return;
         }
 
-        const cartaoFinal = formaPagamento === "cartao_credito" 
-            ? numeroCartao.replace(/\D/g, "").slice(-4) 
-            : undefined;
-    
-        onAvancar({
-            tipoDoacao: "monetaria",
-            idInstituicao: dados.idInstituicao,
-            valor,
-            formaPagamento,
-            recorrente: dados.recorrente ?? false,
-            cartaoFinal,    
-        });
-    
+        if (!cartao) {
+            onAvancar({
+                tipoDoacao: "monetaria",
+                idInstituicao: dados.idInstituicao,
+                valor,
+                formaPagamento,
+                recorrente: dados.recorrente ?? false,
+            });
+            return;
+        }
+
+        // Cartão: o Mercado Pago lê os campos seguros e devolve um token de uso único.
+        setGerandoToken(true);
+        try {
+            const token = await create_token({ nome: nomeCartao.trim(), cpf: only_digits(cpfTitular) });
+
+            onAvancar({
+                tipoDoacao: "monetaria",
+                idInstituicao: dados.idInstituicao,
+                valor,
+                formaPagamento,
+                recorrente: dados.recorrente ?? false,
+                cardToken: token.cardToken,
+                paymentMethodId: token.paymentMethodId,
+                cartaoFinal: token.cartaoFinal,
+            });
+        } catch (e) {
+            setErros({ cartao: e instanceof Error ? e.message : "Não foi possível validar o cartão." });
+        } finally {
+            setGerandoToken(false);
+        }
     }
 
     return (
         <div className="detalhes-monetaria">
             <h2>Vamos preparar sua doação?</h2>
             <p className="subtitulo">Defina o valor que deseja doar e selecione a forma de pagamento.</p>
+
+            {aviso && <p className="detalhes-aviso" role="alert">{aviso}</p>}
 
             <CampoTexto
                 label="Valor da Doação"
@@ -102,6 +164,7 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar }: EtapaDetalh
                 onChange={setValorDoacao}
                 placeholder="R$ 0,00"
                 erro={erros.valorDoacao}
+                complemento={mostrar_taxa ? <TaxaMercadoPago valor={valor_digitado} forma_pagamento={formaPagamento} /> : undefined}
                 required
             />
 
@@ -115,18 +178,10 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar }: EtapaDetalh
                 erro={erros.formaPagamento}
             />
 
-            {formaPagamento == "cartao_credito" &&
+            {cartao &&
                 <>
-                    <CampoTexto
-                        label="Número do Cartão"
-                        variante="numeroCartao"
-                        className="campos-cartao"
-                        value={numeroCartao}
-                        onChange={setNumeroCartao}
-                        placeholder="0000 0000 0000 0000"
-                        required
-                    /> 
-                    
+                    <CampoSeguroCartao label="Número do Cartão" container_id={ID_CAMPO_NUMERO} className="campos-cartao" />
+
                     <CampoTexto
                         label="Nome no Cartão"
                         variante="texto"
@@ -134,41 +189,46 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar }: EtapaDetalh
                         onChange={setNomeCartao}
                         placeholder="Nome impresso no cartão"
                         className="campos-cartao"
+                        erro={erros.nomeCartao}
+                        autoComplete="cc-name"
                         required
                     />
 
                     <div className="container-campos-cartao">
-                        <CampoTexto
-                            label="Data de Validade"
-                            variante="validade"
-                            value={dataValidade}
-                            onChange={setDataValidade}
-                            placeholder="MM/AA"
-                            className="campos-lado-a-lado"
-                            required
-                        />
-
-                        <CampoTexto
-                            label="Código de Segurança (CVV)"
-                            variante="cvv"
-                            value={cvv}
-                            onChange={setCvv}
-                            placeholder="000"
-                            className="campos-lado-a-lado"
-                            required
-                        />
+                        <CampoSeguroCartao label="Data de Validade" container_id={ID_CAMPO_VALIDADE} className="campos-lado-a-lado" />
+                        <CampoSeguroCartao label="CVV" container_id={ID_CAMPO_CVV} className="campos-lado-a-lado" />
                     </div>
-                </>    
+
+                    <CampoTexto
+                        label="CPF do Titular"
+                        variante="texto"
+                        value={cpfTitular}
+                        onChange={valor => setCpfEditado(format_cpf(valor))}
+                        placeholder="000.000.000-00"
+                        className="campos-cartao"
+                        erro={erros.cpfTitular}
+                        autoComplete="off"
+                        required
+                    />
+
+                    {(erros.cartao || erro_sdk) && (
+                        <p className="detalhes-aviso" role="alert">{erros.cartao ?? erro_sdk}</p>
+                    )}
+
+                    <p className="detalhes-seguranca">
+                        Os dados do cartão são digitados em campos seguros do Mercado Pago e nunca passam pelos servidores do NPET.
+                    </p>
+                </>
             }
 
             <Botao
                 variant="primario"
                 size="md"
                 className="botao-avancar"
-                onClick={handleAvancar}
-                disabled={incompleto}
+                onClick={() => void handleAvancar()}
+                disabled={incompleto || gerandoToken}
             >
-                Continuar Doação
+                {gerandoToken ? "Validando cartão..." : "Continuar Doação"}
             </Botao>
         </div>
     )

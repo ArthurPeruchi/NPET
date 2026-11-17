@@ -1,0 +1,31 @@
+.taxa-mp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.taxa-mp-texto {
+    white-space: nowrap;
+    font-size: 14px;
+    color: var(--secondary-body-text-color);
+}
+
+.taxa-mp-texto strong {
+    color: var(--body-text-color);
+    font-weight: 600;
+}
+
+.taxa-mp-info {
+    display: flex;
+    flex-shrink: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.taxa-mp-info:focus-visible {
+    outline: 2px solid var(--main-color);
+    outline-offset: 2px;
+}
