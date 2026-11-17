@@ -51,6 +51,7 @@ export interface Doacao {
     criadaEm: string;
     feedback?: string;
     feedbackVisto?: boolean;
+    confirmadaEm?: string;
 }
 
 export interface ItemDoacaoProduto {
@@ -72,12 +73,18 @@ export interface Visita {
     horario: string;
 }
 
+export interface DadosPix {
+    qrCode: string;
+    expiraEm?: string;
+}
+
 export interface DoacaoMonetaria extends Doacao {
     tipoDoacao: "monetaria";
     valor: number;
     formaPagamento: FormaPagamento;
     recorrente: boolean;
     cartaoFinal?: string;
+    pix?: DadosPix;
 }
 
 export interface DoacaoProdutoBase extends Doacao {
@@ -108,6 +115,8 @@ export interface DadosDoacaoMonetaria extends DadosDoacaoBase {
     formaPagamento?: FormaPagamento;
     recorrente?: boolean;
     cartaoFinal?: string;
+    cardToken?: string;
+    paymentMethodId?: string;
 }
 
 export interface DadosDoacaoProduto extends DadosDoacaoBase {
