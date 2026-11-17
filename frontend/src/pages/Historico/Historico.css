@@ -23,7 +23,7 @@
 
 .historico-filtro {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 8px;
     align-self: flex-start;
     margin: 0 0 16px 3%;
@@ -33,11 +33,38 @@
 }
 
 .historico-filtro input {
-    width: 18px;
-    height: 18px;
-    margin: 0;
+    align-items: center;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    margin: 2px 0 0;
     accent-color: var(--main-color);
+    border: 2px solid #aaa;
+    border-radius: 4px;
+    background-color: white;
     cursor: pointer;
+    flex-shrink: 0;
+}
+
+.historico-filtro input:hover, .historico-filtro input:checked:hover {
+    border-color: var(--hover-main-color);
+    background-color: var(--main-neutral-color);
+}
+
+.historico-filtro input:checked::after {
+    content: "✓";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--main-color);
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.historico-filtro input:checked {
+    background-color: white;
+    border-color: var(--main-color);
 }
 
 .historico-filtro-contagem {
