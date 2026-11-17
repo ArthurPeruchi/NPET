@@ -43,6 +43,8 @@ export default function Historico() {
     const { instituicoes } = useInstituicoes();
 
     const [termo_busca, setTermoBusca] = useState("");
+    // Por padrão as doações canceladas ficam ocultas, mas continuam acessíveis pelo filtro.
+    const [ocultar_canceladas, setOcultarCanceladas] = useState(true);
     const [feedback_alvo, setFeedbackAlvo] = useState<DoacaoRegistrada | null>(null);
     const [recorrencia_alvo, setRecorrenciaAlvo] = useState<{ donation: DoacaoRegistrada; ativar: boolean } | null>(null);
     const [erro_acao, setErroAcao] = useState<string | null>(null);
@@ -52,7 +54,8 @@ export default function Historico() {
         [instituicoes]
     );
 
-    const doacoes_filtradas = useMemo(() => {
+    // Primeiro aplica a busca por texto.
+    const doacoes_buscadas = useMemo(() => {
         const termo = normalize_text(termo_busca.trim());
         if (!termo) return doacoes;
 
@@ -60,6 +63,18 @@ export default function Historico() {
             get_search_text(d, instituicao_por_id.get(d.idInstituicao)?.nome ?? "").includes(termo)
         );
     }, [doacoes, termo_busca, instituicao_por_id]);
+
+    // Depois aplica o filtro de status sobre o resultado da busca.
+    const doacoes_filtradas = useMemo(
+        () => (ocultar_canceladas ? doacoes_buscadas.filter(d => d.status !== "cancelada") : doacoes_buscadas),
+        [doacoes_buscadas, ocultar_canceladas]
+    );
+
+    const total_canceladas = useMemo(
+        () => doacoes.filter(d => d.status === "cancelada").length,
+        [doacoes]
+    );
+    const total_ocultas = doacoes_buscadas.length - doacoes_filtradas.length;
 
     // Reabre o fluxo de doação com a instituição (e, na monetária, valor e forma) já preenchidos.
     function handle_repeat(donation: DoacaoRegistrada) {
@@ -130,6 +145,20 @@ export default function Historico() {
                     onChange={setTermoBusca}
                 />
 
+                {!carregando && !erro && total_canceladas > 0 && (
+                    <label className="historico-filtro">
+                        <input
+                            type="checkbox"
+                            checked={ocultar_canceladas}
+                            onChange={e => setOcultarCanceladas(e.target.checked)}
+                        />
+                        Ocultar doações canceladas
+                        {ocultar_canceladas && total_ocultas > 0 && (
+                            <span className="historico-filtro-contagem"> ({total_ocultas} oculta{total_ocultas > 1 ? "s" : ""})</span>
+                        )}
+                    </label>
+                )}
+
                 {erro_acao && <p className="historico-aviso historico-aviso--erro" role="alert">{erro_acao}</p>}
                 {carregando && <p className="historico-aviso" role="status">Carregando histórico...</p>}
                 {erro && <p className="historico-aviso historico-aviso--erro" role="alert">{erro}</p>}
@@ -142,7 +171,11 @@ export default function Historico() {
                 )}
 
                 {!carregando && !erro && doacoes.length > 0 && doacoes_filtradas.length === 0 && (
-                    <p className="historico-aviso">Nenhuma doação encontrada para essa busca.</p>
+                    <p className="historico-aviso">
+                        {total_ocultas > 0 && !termo_busca.trim()
+                            ? "Você não tem doações concluídas ou aguardando pagamento."
+                            : "Nenhuma doação encontrada para essa busca."}
+                    </p>
                 )}
 
                 {doacoes_filtradas.length > 0 && (

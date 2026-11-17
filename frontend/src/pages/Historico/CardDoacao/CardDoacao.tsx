@@ -97,6 +97,7 @@ export default function CardDoacao({
     const tem_feedback = Boolean(donation.feedback);
     const tem_feedback_novo = tem_feedback && !donation.feedbackVisto;
     const pode_repetir = institution?.aceitaDoacoes === true;
+    const data_transacao = donation.confirmadaEm ?? donation.criadaEm; // Data em que o pagamento foi aprovado; enquanto pendente ou cancelada, vale a data de criação.
 
     return (
         <article className="card-doacao" aria-label={`Doação para ${nome_instituicao}`}>
@@ -125,7 +126,7 @@ export default function CardDoacao({
 
                 {donation.tipoDoacao === "monetaria" ? (
                     <>
-                        <CampoTexto label="Data da Transação" variante="exibicao" value={format_date(donation.criadaEm)} />
+                        <CampoTexto label="Data da Transação" variante="exibicao" value={format_date(data_transacao)} />
                         <CampoTexto label="Valor" variante="exibicao" value={format_currency(donation.valor)} />
                         <CampoTexto
                             label="Forma de Pagamento"
@@ -140,7 +141,7 @@ export default function CardDoacao({
                                 variante="exibicao"
                                 icone={donation.recorrente ? ICONE_CHECK : ICONE_X}
                                 value={donation.recorrente
-                                    ? `Próximo lembrete: ${format_date(get_next_monthly_date(donation.criadaEm))}`
+                                    ? `Próximo lembrete: ${format_date(get_next_monthly_date(data_transacao))}`
                                     : "Não"}
                             />
                             {/* Só doações concluídas podem ganhar recorrência; desativar vale sempre. */}
@@ -160,7 +161,7 @@ export default function CardDoacao({
                                 value={`${donation.visita.data} às ${donation.visita.horario}`}
                             />
                         ) : (
-                            <CampoTexto label="Data da Transação" variante="exibicao" value={format_date(donation.criadaEm)} />
+                            <CampoTexto label="Data da Transação" variante="exibicao" value={format_date(data_transacao)} />
                         )}
 
                         <div className="campo-texto campo-texto--exibicao card-doacao-largura-total">
