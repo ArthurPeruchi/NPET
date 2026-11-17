@@ -112,6 +112,11 @@ export default function Cadastro() {
                 }),
             });
 
+            if (response.status === 409) {
+                setErroGeral("E-mail ou CPF já cadastrado.");
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error("Erro ao criar a conta.");
             }
