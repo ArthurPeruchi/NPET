@@ -16,16 +16,16 @@ export default function useHistoricoDoacoes() {
         return () => { ativo = false; };
     }, []);
 
+    function replace_donation(updated: DoacaoRegistrada) {
+        setDoacoes(list => list.map(d => (d.id === updated.id ? updated : d)));
+    }
+
     async function set_recurrence(donation_id: number, recorrente: boolean) {
-        await set_donation_recurrence(donation_id, recorrente);
-        setDoacoes(list =>
-            list.map(d => (d.id === donation_id && d.tipoDoacao === "monetaria" ? { ...d, recorrente } : d))
-        );
+        replace_donation(await set_donation_recurrence(donation_id, recorrente));
     }
 
     async function see_feedback(donation_id: number) {
-        await mark_feedback_seen(donation_id);
-        setDoacoes(list => list.map(d => (d.id === donation_id ? { ...d, feedbackVisto: true } : d)));
+        replace_donation(await mark_feedback_seen(donation_id));
     }
 
     return { doacoes, carregando, erro, set_recurrence, see_feedback };
