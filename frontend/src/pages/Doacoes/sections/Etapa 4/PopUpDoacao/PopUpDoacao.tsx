@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import Botao from "../../../../../components/Botao/Botao";
-import { SIMULATED_PIX_KEY } from "../../../../../services/doacoesService";
+import type { DadosPix } from "../../../../../types/domain";
 import "./PopUpDoacao.css";
 
-export type FasePopUp = "confirmar_cartao" | "processando" | "pix_gerado" | "concluida";
+export type FasePopUp = "confirmar_cartao" | "processando" | "pix_gerado" | "pix_expirado" | "em_analise" | "concluida";
 
 type PopUpDoacaoProps = {
     fase: FasePopUp;
+    pix?: DadosPix; // cobrança PIX devolvida pela API
     valor_formatado: string;
     onConfirm: () => void; // "Confirmar e Doar" (cartão)
     onCancel: () => void; // "Cancelar" / X antes de a doação ser registrada
@@ -40,7 +41,14 @@ function IconeConfete() {
     );
 }
 
-export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel, onFinish }: PopUpDoacaoProps) {
+// Horário (HH:MM) em que o código PIX deixa de valer.
+function format_expiration(expira_em?: string): string | null {
+    if (!expira_em) return null;
+    const date = new Date(expira_em);
+    return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+export default function PopUpDoacao({ fase, pix, valor_formatado, onConfirm, onCancel, onFinish }: PopUpDoacaoProps) {
     const [chave_copiada, set_chave_copiada] = useState(false);
     const [erro_copia, set_erro_copia] = useState(false);
     const timer_ref = useRef<number | null>(null);
@@ -48,6 +56,7 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
 
     const processando = fase === "processando";
     const antes_do_registro = fase === "confirmar_cartao";
+    const expiracao = format_expiration(pix?.expiraEm);
 
     function handle_close() {
         if (processando) return;
@@ -82,7 +91,8 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
 
     async function handle_copy() {
         try {
-            await navigator.clipboard.writeText(SIMULATED_PIX_KEY);
+            if (!pix) return;
+            await navigator.clipboard.writeText(pix.qrCode);
             set_erro_copia(false);
             set_chave_copiada(true);
             if (timer_ref.current !== null) window.clearTimeout(timer_ref.current);
@@ -97,13 +107,21 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
         ? <>Doação concluída! <IconeConfete /></>
         : fase === "processando"
             ? ""
-            : <>Doação pronta para ser concluída! <IconeConfete /></>;
+            : fase === "em_analise"
+                ? "Pagamento em análise"
+                : fase === "pix_expirado"
+                    ? "Código PIX expirado"
+                    : <>Doação pronta para ser concluída! <IconeConfete /></>;
 
     const titulo_acessivel = fase === "concluida"
     ? "Doação concluída!"
     : fase === "processando"
         ? "Processando doação..."
-        : "Doação pronta para ser concluída!";
+        : fase === "em_analise"
+            ? "Pagamento em análise"
+            : fase === "pix_expirado"
+                ? "Código PIX expirado"
+                : "Doação pronta para ser concluída!";
 
     return (
         <div className="popup-overlay">
@@ -117,7 +135,7 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
             >
                 {processando ? (
                     <div className="popup-processando" role="status">
-                        <p className="popup-processando-texto">Simulando doação...</p>
+                        <p className="popup-processando-texto">Processando doação...</p>
                         <span className="popup-spinner" aria-hidden="true" />
                     </div>
                 ) : (
@@ -137,39 +155,81 @@ export default function PopUpDoacao({ fase, valor_formatado, onConfirm, onCancel
                         {fase === "pix_gerado" && (
                             <>
                                 <p className="popup-texto">
-                                    Estamos quase lá! Use o QR Code abaixo ou copie a chave para concluir sua doação.
+                                    Estamos quase lá! Use o QR Code abaixo ou copie o código PIX para concluir sua doação de <strong>{valor_formatado}</strong>.
                                 </p>
 
-                                <div className="popup-qrcode">
-                                    <QRCodeSVG
-                                        value={SIMULATED_PIX_KEY}
-                                        size={160}
-                                        title="QR Code para pagamento via PIX"
-                                    />
-                                </div>
+                                {pix ? (
+                                    <>
+                                        <div className="popup-qrcode">
+                                            <QRCodeSVG
+                                                value={pix.qrCode}
+                                                size={160}
+                                                title="QR Code para pagamento via PIX"
+                                            />
+                                        </div>
 
-                                <div className="popup-chave">
-                                    <fieldset className="popup-chave-campo">
-                                        <legend>Chave PIX</legend>
-                                        <span>{SIMULATED_PIX_KEY}</span>
-                                    </fieldset>
-                                    <button type="button" className="popup-copiar" onClick={handle_copy}>
-                                        <IconeCopiar />
-                                        {chave_copiada ? "Copiado!" : "Copiar"}
-                                    </button>
-                                </div>
+                                        <div className="popup-chave">
+                                            <fieldset className="popup-chave-campo">
+                                                <legend>PIX Copia e Cola</legend>
+                                                <span className="popup-chave-codigo">{pix.qrCode}</span>
+                                            </fieldset>
+                                            <button type="button" className="popup-copiar" onClick={handle_copy}>
+                                                <IconeCopiar />
+                                                {chave_copiada ? "Copiado!" : "Copiar"}
+                                            </button>
+                                        </div>
 
-                                {erro_copia && (
+                                        {erro_copia && (
+                                            <p className="popup-erro" role="alert">
+                                                Não foi possível copiar automaticamente. Selecione e copie o código acima.
+                                            </p>
+                                        )}
+
+                                        {expiracao && (
+                                            <p className="popup-texto">Este código vale até as <strong>{expiracao}</strong>.</p>
+                                        )}
+                                    </>
+                                ) : (
                                     <p className="popup-erro" role="alert">
-                                        Não foi possível copiar automaticamente. Selecione e copie a chave acima.
+                                        Não foi possível obter o código PIX. Consulte sua doação no histórico.
                                     </p>
                                 )}
 
-                                <p className="popup-texto">
-                                    Assim que o pagamento for identificado, você receberá uma confirmação por e-mail.
+                                <p className="popup-texto" role="status">
+                                    Estamos aguardando o pagamento. Assim que ele for identificado, esta janela será atualizada e você receberá uma confirmação por e-mail.
                                 </p>
 
                                 <Botao variant="secundario" size="md" className="botao-acoes" fullWidth onClick={onFinish}>
+                                    Voltar ao Início
+                                </Botao>
+                            </>
+                        )}
+
+                        {fase === "pix_expirado" && (
+                            <>
+                                <p className="popup-texto">
+                                    O tempo para pagar este PIX acabou e a doação foi cancelada. Você pode tentar novamente com um novo código.
+                                </p>
+
+                                <div className="popup-acoes">
+                                    <Botao variant="primario" size="md" className="btn-acoes" fullWidth onClick={onCancel}>
+                                        Tentar Novamente
+                                    </Botao>
+                                    <Botao variant="secundario" size="md" className="btn-acoes" fullWidth onClick={onFinish}>
+                                        Voltar ao Início
+                                    </Botao>
+                                </div>
+                            </>
+                        )}
+
+                        {fase === "em_analise" && (
+                            <>
+                                <p className="popup-texto">
+                                    Seu pagamento de <strong>{valor_formatado}</strong> está sendo analisado pelo emissor do cartão.
+                                    Você receberá um e-mail assim que ele for confirmado, e também pode acompanhar pelo histórico de doações.
+                                </p>
+
+                                <Botao variant="primario" size="md" className="btn-acoes" fullWidth onClick={onFinish}>
                                     Voltar ao Início
                                 </Botao>
                             </>
