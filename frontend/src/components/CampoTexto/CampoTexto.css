@@ -103,6 +103,13 @@
     font-style: italic;
 }
 
+.campo-texto-complemento {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
 .campo-texto-toggle-senha {
     background: none;
     border: none;

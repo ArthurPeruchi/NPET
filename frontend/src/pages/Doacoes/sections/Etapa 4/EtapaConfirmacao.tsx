@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CampoTexto from "../../../../components/CampoTexto/CampoTexto";
 import Botao from "../../../../components/Botao/Botao";
 import ModalConfirmacao from "../../../../components/ModalConfirmacao/ModalConfirmacao";
+import TaxaMercadoPago from "../../../../components/TaxaMercadoPago/TaxaMercadoPago";
 import PopUpDoacao, { type FasePopUp } from "./PopUpDoacao/PopUpDoacao";
 import { register_donation } from "../../../../services/doacoesService";
 import { ApiError } from "../../../../services/apiClient";
@@ -145,6 +146,7 @@ export default function EtapaConfirmacao({ dados, instituicao, on_registered, on
                     label="Valor"
                     variante="exibicao"
                     value={valor_formatado}
+                    complemento={formaPagamento && valor > 0 ? <TaxaMercadoPago valor={valor} forma_pagamento={formaPagamento} /> : undefined}
                 />
 
                 <CampoTexto

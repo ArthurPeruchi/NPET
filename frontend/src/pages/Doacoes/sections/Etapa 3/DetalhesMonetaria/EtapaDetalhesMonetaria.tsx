@@ -4,6 +4,7 @@ import CampoTexto from "../../../../../components/CampoTexto/CampoTexto";
 import Botao from "../../../../../components/Botao/Botao";
 import { IconePix, IconeCartaoCredito } from "../../../../../components/IconePagamento/IconePagamento";
 import { useState } from "react";
+import TaxaMercadoPago from "../../../../../components/TaxaMercadoPago/TaxaMercadoPago";
 import usePerfil from "../../../../../hooks/usePerfil";
 import useCartaoSeguro, { ID_CAMPO_CVV, ID_CAMPO_NUMERO, ID_CAMPO_VALIDADE } from "../../../../../hooks/useCartaoSeguro";
 import { format_cpf } from "../../../../../utils/formatacao";
@@ -39,6 +40,7 @@ function formatarValorSalvo(valor?: number): string {
     return valor ? valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "";
 }
 
+// Campo de cartão seguro: a caixa é nossa, mas o conteúdo é um iframe do Mercado Pago.
 function CampoSeguroCartao({ label, container_id, className }: { label: string; container_id: string; className?: string }) {
     return (
         <div className={`campo-texto ${className ?? ""}`}>
@@ -66,6 +68,10 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar, aviso }: Etap
 
     // Os campos seguros só são montados quando o cartão está selecionado.
     const { pronto, erro_sdk, create_token } = useCartaoSeguro(cartao);
+
+    // A taxa só aparece com um valor válido e a forma de pagamento escolhida (e acompanha o que o usuário digita).
+    const valor_digitado = converterParaNumero(valorDoacao);
+    const mostrar_taxa = formaPagamento !== null && valor_digitado >= 1 && valor_digitado <= 10000;
 
     const incompleto = !valorDoacao || !formaPagamento
         || (cartao && (!nomeCartao.trim() || only_digits(cpfTitular).length < CPF_LENGTH || !pronto));
@@ -158,6 +164,7 @@ export default function EtapaDetalhesMonetaria({ dados, onAvancar, aviso }: Etap
                 onChange={setValorDoacao}
                 placeholder="R$ 0,00"
                 erro={erros.valorDoacao}
+                complemento={mostrar_taxa ? <TaxaMercadoPago valor={valor_digitado} forma_pagamento={formaPagamento} /> : undefined}
                 required
             />
 
