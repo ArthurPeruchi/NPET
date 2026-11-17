@@ -224,7 +224,7 @@ export default function Historico() {
                 {!carregando && !erro && doacoes.length === 0 && (
                     <div className="historico-vazio">
                         <p>Você ainda não fez nenhuma doação.</p>
-                        <Botao variant="primario" size="md" to="/doacoes">Fazer uma doação</Botao>
+                        <Botao variant="primario" size="lg" className="botao-doar" to="/doacoes">Fazer uma doação</Botao>
                     </div>
                 )}
 

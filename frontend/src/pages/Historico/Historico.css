@@ -14,6 +14,10 @@
     text-align: center;
 }
 
+.botao-doar {
+    padding: 25px 55px;
+}
+
 .historico-lista {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -23,7 +27,7 @@
 
 .historico-filtro {
     display: flex;
-    align-items: baseline;
+    align-items: end;
     gap: 8px;
     align-self: flex-start;
     margin: 0 0 16px 3%;
