@@ -43,6 +43,9 @@ export default function Doacoes() {
         doacaoRepetida ?? { idInstituicao: instPreSelecionada?.id ?? null }
     );
 
+    // Motivo da recusa do cartão, exibido na etapa de detalhes quando o usuário precisa digitar o cartão de novo.
+    const [avisoCartao, setAvisoCartao] = useState<string | null>(null);
+
     const [doacaoRegistrada, setDoacaoRegistrada] = useState(false);
     const emAndamento = !doacaoRegistrada && passoAtual > 1;
 
@@ -77,8 +80,15 @@ export default function Doacoes() {
     }
 
     function salvarDetalhes(detalhes: DadosDoacaoMonetaria | DadosDoacaoProduto) {
+        setAvisoCartao(null);
         setDadosDoacao(detalhes);
         setPassoAtual(4);
+    }
+
+    // O token do cartão vale para uma única tentativa: depois de recusado, o usuário digita o cartão de novo.
+    function cartaoRecusado(motivo: string) {
+        setAvisoCartao(motivo);
+        setPassoAtual(3);
     }
 
     function voltar() {
@@ -127,7 +137,7 @@ export default function Doacoes() {
 
             {passoAtual === 3 && "tipoDoacao" in dadosDoacao && (
                 dadosDoacao.tipoDoacao === "monetaria"
-                    ? <EtapaDetalhesMonetaria dados={dadosDoacao} onAvancar={salvarDetalhes} />
+                    ? <EtapaDetalhesMonetaria dados={dadosDoacao} onAvancar={salvarDetalhes} aviso={avisoCartao ?? undefined} />
                     : <EtapaDetalhesProduto />
             )}
 
@@ -138,7 +148,12 @@ export default function Doacoes() {
 
             {passoAtual === 4 && instituicaoEscolhida && "tipoDoacao" in dadosDoacao
                 && dadosDoacao.tipoDoacao === "monetaria" && (
-                <EtapaConfirmacao dados={dadosDoacao} instituicao={instituicaoEscolhida} on_registered={() => setDoacaoRegistrada(true)} />
+                <EtapaConfirmacao
+                    dados={dadosDoacao}
+                    instituicao={instituicaoEscolhida}
+                    on_registered={() => setDoacaoRegistrada(true)}
+                    on_card_declined={cartaoRecusado}
+                />
             )}
 
             {blocker.state === "blocked" && (
