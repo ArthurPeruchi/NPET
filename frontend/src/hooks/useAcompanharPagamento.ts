@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { StatusDoacao } from "../types/domain";
 import { get_donation } from "../services/doacoesService";
+import { notify_activity } from "../auth/atividade";
 
 const POLLING_INTERVAL_MS = 5000;
 
@@ -13,6 +14,8 @@ export default function useAcompanharPagamento(donation_id: number | null, ativo
         let vivo = true;
 
         async function check() {
+            // Esperar o pagamento conta como atividade: o usuário pode ficar parado até pagar no app do banco.
+            notify_activity();
             try {
                 const donation = await get_donation(donation_id as number);
                 if (!vivo) return;
