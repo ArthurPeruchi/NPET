@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
-import logoNpet from "../../assets/logoNpet.png";
+import logoNpet from "../../../public/logoNpet.png";
 import "./NavBar.css";
 
 const LINKS_PRINCIPAIS = [
@@ -24,6 +24,20 @@ export default function NavBar() {
     const [menuMobileAberto, setMenuMobileAberto] = useState(false);
 
     const refPerfil = useRef<HTMLLIElement>(null);
+
+    useEffect(() => {
+        function handleClickFora(event: MouseEvent) {
+            if (refPerfil.current && !refPerfil.current.contains(event.target as Node)) {
+                setPerfilAberto(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickFora);
+        
+        return () => {
+            document.removeEventListener("mousedown", handleClickFora);
+        };
+    }, []);
 
     function fecharMenus() {
         setMenuMobileAberto(false);

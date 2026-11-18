@@ -60,6 +60,13 @@
     transition: color 120ms ease;
 }
 
+.rodape-link--ativo,
+.rodape-link--ativo:hover {
+    opacity: 0.5;
+    text-decoration: none;
+    cursor: default;
+}
+
 .rodape-lista-contatos {
     display: flex;
     flex-direction: column;
@@ -106,8 +113,9 @@
     text-decoration: none;
 }
 
-.rodape-link:hover, .rodape-social-link:hover { 
-    color: #fff; 
+.rodape-link:not(.rodape-link--ativo):hover,
+.rodape-social-link:hover {
+    color: #fff;
 }
 
 .rodape-social-icon {

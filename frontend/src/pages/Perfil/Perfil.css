@@ -1,0 +1,230 @@
+.perfil {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 16px 48px;
+}
+
+    .perfil--com-barra {
+    padding-bottom: 120px;
+}
+
+.perfil h2 {
+    margin: 32px 0 0;
+    text-align: center;
+}
+
+.perfil-subtitulo {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.perfil-aviso {
+    margin: 24px 0;
+    text-align: center;
+    color: var(--body-text-color);
+}
+
+.perfil-aviso--erro {
+    color: var(--error-color);
+}
+
+.perfil-card {
+    width: 100%;
+    max-width: 660px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+    padding: 32px 40px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.perfil-avatar {
+    align-self: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--main-color);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.perfil-mensagem {
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #e8f4ee;
+    color: var(--main-color);
+    font-size: 14px;
+    text-align: center;
+}
+
+.perfil-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.perfil-erro-geral {
+    margin: 0;
+    font-size: 13px;
+    color: var(--error-color);
+    text-align: center;
+}
+
+/* Barra fixa no rodapé da tela: sempre visível enquanto houver alterações não salvas. */
+.perfil-barra-alteracoes {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 20px calc(12px + env(safe-area-inset-bottom));
+    background: #ffffff;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.perfil-barra-texto {
+    font-size: 16px;
+    color: var(--body-text-color);
+    font-weight: 600;
+}
+
+.perfil-barra-botoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    min-width: 320px;
+}
+
+.perfil-acoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.perfil-acoes--painel {
+    margin-top: 6px;
+}
+
+.perfil-secao {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.perfil-senha-painel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--secondary-neutral-color);
+    border-radius: 12px;
+    background: var(--main-neutral-color);
+}
+
+.perfil-senha-painel .campo-texto-fieldset {
+    background: #ffffff;
+}
+
+.perfil-zona-risco {
+    margin-top: 8px;
+}
+
+.perfil-zona-risco h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: var(--error-color);
+}
+
+.perfil-zona-risco-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--error-color);
+    border-radius: 10px;
+}
+
+.perfil-zona-risco-item strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 6px;
+    color: var(--title-text-color);
+}
+
+.perfil-zona-risco-item p {
+    margin: 2px 0 0;
+    font-size: 15px;
+    color: var(--body-text-color);
+}
+
+#perfil-zona-risco-titulo {
+    text-align: center;
+    font-size: 18px;
+}
+
+.botao-acoes {
+    height: 55px;
+}
+
+.botao.perfil-botao-perigo {
+    height: 55px;
+    flex-shrink: 0;
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+.botao.perfil-botao-perigo:hover:not(.botao--disabled) {
+    background: rgba(224, 84, 84, 0.08);
+}
+
+@media (max-width: 480px) {
+    .perfil {
+        padding-inline: 0;
+    }
+
+    .perfil h2,
+    .perfil-subtitulo {
+        padding-inline: 20px;
+    }
+
+    .perfil-card {
+        border-radius: 0;
+        box-shadow: none;
+        padding: 24px 18px 32px;
+    }
+
+    .perfil-acoes {
+        grid-template-columns: 1fr;
+    }
+
+    .perfil-barra-alteracoes {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .perfil-barra-botoes {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .perfil-zona-risco-item {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+}

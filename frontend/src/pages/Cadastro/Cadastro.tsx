@@ -1,24 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logoNpet from "../../assets/logoNpet.png";
+import logoNpet from "../../../public/logoNpet.png";
 import CampoTexto from "../../components/CampoTexto/CampoTexto";
 import Botao from "../../components/Botao/Botao";
 import "./Cadastro.css";
-
-function formatarCPF(raw: string): string {
-    const d = raw.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 3) return d;
-    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-}
-
-function formatarTelefone(raw: string): string {
-    const d = raw.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 2) return d.length ? `(${d}` : "";
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
+import { format_phone, format_cpf } from "../../utils/formatacao";
+import { is_valid_email, validate_password } from "../../utils/validacao";
 
 type FormState = {
     nome: string;
@@ -61,12 +48,12 @@ export default function Cadastro() {
     }
 
     function setCPF(raw: string) {
-        setForm(f => ({ ...f, cpf: formatarCPF(raw) }));
+        setForm(f => ({ ...f, cpf: format_cpf(raw) }));
         if (erros.cpf) setErros(e => ({ ...e, cpf: undefined }));
     }
 
     function setTelefone(raw: string) {
-        setForm(f => ({ ...f, telefone: formatarTelefone(raw) }));
+        setForm(f => ({ ...f, telefone: format_phone(raw) }));
         if (erros.telefone) setErros(e => ({ ...e, telefone: undefined }));
     }
 
@@ -78,13 +65,12 @@ export default function Cadastro() {
 
         if (!form.email.trim())
             novosErros.email = "E-mail é obrigatório.";
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+        else if (!is_valid_email(form.email))
             novosErros.email = "Informe um e-mail válido.";
 
-        if (!form.senha)
-            novosErros.senha = "Senha é obrigatória.";
-        else if (form.senha.length < 8)
-            novosErros.senha = "A senha deve ter no mínimo 8 caracteres.";
+        const erroSenha = validate_password(form.senha);
+        if (erroSenha)
+            novosErros.senha = erroSenha;
 
         if (!form.confirmacaoSenha)
             novosErros.confirmacaoSenha = "Confirme sua senha.";
@@ -111,7 +97,7 @@ export default function Cadastro() {
 
         setCarregando(true);
         try {
-            const response = await fetch(`${api_url}/users/auth/register`, {
+            const response = await fetch(`${api_url}/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -208,26 +194,6 @@ export default function Cadastro() {
                         autoComplete="email"
                     />
 
-                    <CampoTexto
-                        label="Senha"
-                        variante="senha"
-                        value={form.senha}
-                        onChange={set("senha")}
-                        required
-                        erro={erros.senha}
-                        autoComplete="new-password"
-                    />
-
-                    <CampoTexto
-                        label="Confirmar Senha"
-                        variante="senha"
-                        value={form.confirmacaoSenha}
-                        onChange={set("confirmacaoSenha")}
-                        required
-                        erro={erros.confirmacaoSenha}
-                        autoComplete="new-password"
-                    />
-
                     <div className="cadastro-linha-dupla">
 
                         <CampoTexto
@@ -253,6 +219,26 @@ export default function Cadastro() {
                         />
                     </div>
 
+                    <CampoTexto
+                        label="Senha"
+                        variante="senha"
+                        value={form.senha}
+                        onChange={set("senha")}
+                        required
+                        erro={erros.senha}
+                        autoComplete="new-password"
+                    />
+
+                    <CampoTexto
+                        label="Confirmar Senha"
+                        variante="senha"
+                        value={form.confirmacaoSenha}
+                        onChange={set("confirmacaoSenha")}
+                        required
+                        erro={erros.confirmacaoSenha}
+                        autoComplete="new-password"
+                    />
+
                     {erroGeral && (
                         <p className="cadastro-erro-geral" role="alert">
                             {erroGeral}
@@ -272,7 +258,7 @@ export default function Cadastro() {
                 </form>
 
                 <p className="cadastro-login">
-                    Já tem uma conta?
+                    Já tem uma conta?{" "}
                     <button
                         type="button"
                         className="cadastro-link"

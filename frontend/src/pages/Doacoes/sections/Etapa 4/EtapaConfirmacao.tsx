@@ -1,0 +1,258 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import CampoTexto from "../../../../components/CampoTexto/CampoTexto";
+import Botao from "../../../../components/Botao/Botao";
+import ModalConfirmacao from "../../../../components/ModalConfirmacao/ModalConfirmacao";
+import TaxaMercadoPago from "../../../../components/TaxaMercadoPago/TaxaMercadoPago";
+import PopUpDoacao, { type FasePopUp } from "./PopUpDoacao/PopUpDoacao";
+import { register_donation } from "../../../../services/doacoesService";
+import { ApiError } from "../../../../services/apiClient";
+import useAcompanharPagamento from "../../../../hooks/useAcompanharPagamento";
+import type { DadosDoacaoMonetaria, DoacaoMonetaria, Instituicao } from "../../../../types/domain";
+import "./EtapaConfirmacao.css";
+import { IconePix, IconeCartaoCredito } from "../../../../components/IconePagamento/IconePagamento";
+import { format_currency } from "../../../../utils/moeda";
+import { ROTULO_FORMA_PAGAMENTO } from "../../../Historico/rotulos";
+
+type EtapaConfirmacaoProps = {
+    dados: DadosDoacaoMonetaria;
+    instituicao: Instituicao;
+    on_registered?: () => void;
+    on_card_declined?: (motivo: string) => void; // cartão recusado ou token inválido: volta para a etapa dos detalhes
+};
+
+type FaseConfirmacao = "formulario" | FasePopUp;
+
+const IconeInformacao = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#1a6e54" viewBox="0 0 256 256">
+        <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z"></path>
+    </svg>
+)
+
+export default function EtapaConfirmacao({ dados, instituicao, on_registered, on_card_declined }: EtapaConfirmacaoProps) {
+    const navigate = useNavigate();
+
+    const [recorrente, setRecorrente] = useState<boolean>(dados.recorrente ?? false);
+    const [aceitouTermos, setAceitouTermos] = useState<boolean>(false);
+    const [fase, setFase] = useState<FaseConfirmacao>("formulario");
+    const [dialogoRecorrencia, setDialogoRecorrencia] = useState<boolean>(false);
+    const [erro, setErro] = useState<string | null>(null);
+    const [doacao, setDoacao] = useState<DoacaoMonetaria | null>(null);
+
+    // Com o PIX gerado, consulta a doação até o pagamento ser identificado (ou o código expirar).
+    const status_pix = useAcompanharPagamento(doacao?.id ?? null, fase === "pix_gerado");
+    const fase_exibida: FaseConfirmacao =
+        fase === "pix_gerado" && status_pix === "confirmada" ? "concluida"
+        : fase === "pix_gerado" && status_pix === "cancelada" ? "pix_expirado"
+        : fase;
+
+    const formaPagamento = dados.formaPagamento;
+    const valor = dados.valor ?? 0;
+    const valor_formatado = format_currency(valor);
+    const Cartao = formaPagamento === "cartao_credito";
+
+    async function processDonation() {
+        if (!formaPagamento || dados.idInstituicao === null) return;
+
+        // O token do cartão só existe se o usuário passou pela etapa dos detalhes.
+        if (Cartao && !dados.cardToken) {
+            on_card_declined?.("Informe os dados do cartão novamente para continuar.");
+            return;
+        }
+
+        setErro(null);
+        setFase("processando");
+
+        try {
+            const registrada = await register_donation({
+                idInstituicao: dados.idInstituicao,
+                valor,
+                formaPagamento: formaPagamento,
+                recorrente,
+                cardToken: dados.cardToken,
+                paymentMethodId: dados.paymentMethodId,
+                cartaoFinal: dados.cartaoFinal,
+            });
+
+            setDoacao(registrada);
+
+            // Libera a saída da página sem o pop-up perguntando se o usuário realmente quer sair
+            on_registered?.();
+
+            if (!Cartao) setFase("pix_gerado");
+            else setFase(registrada.status === "confirmada" ? "concluida" : "em_analise");
+        } catch (e) {
+            const mensagem = e instanceof Error ? e.message : "Não foi possível registrar sua doação.";
+
+            // 402 (cartão recusado) e 422 (token inválido ou já usado): é preciso digitar o cartão de novo.
+            if (Cartao && e instanceof ApiError && (e.status === 402 || e.status === 422)) {
+                on_card_declined?.(mensagem);
+                return;
+            }
+
+            setErro(mensagem);
+            setFase("formulario");
+        }
+    }
+
+    function handleRecurrenceChange(checked: boolean) {
+        if (checked) setDialogoRecorrencia(true);
+        else setRecorrente(false);
+    }
+
+    function confirmRecurrence() {
+        setRecorrente(true);
+        setDialogoRecorrencia(false);
+    }
+
+    // Cartão pede uma última confirmação; PIX já gera a cobrança.
+    function handleConfirmClick() {
+        if (Cartao) setFase("confirmar_cartao");
+        else void processDonation();
+    }
+
+    // Com o PIX ainda aguardando pagamento, a saída leva ao histórico: é lá que o código pode ser reaberto.
+    function sair_do_popup() {
+        if (fase_exibida === "pix_gerado" && doacao) {
+            navigate("/historico", { state: { pixPendenteId: doacao.id } });
+        } else {
+            navigate("/");
+        }
+    }
+
+    return (
+        <div className="confirmacao">
+            <h2>Tudo pronto para confirmar sua doação?</h2>
+            <p className="subtitulo">Revise as informações e conclua seu gesto de solidariedade.</p>
+
+            <div className="confirmacao-campos">
+                <CampoTexto
+                    label="Instituição Beneficiada"
+                    variante="exibicao"
+                    className={`confirmacao-instituicao ${!instituicao.logo ? "sem-logo" : ""}`}
+                    value={instituicao.nome}
+                    icone={instituicao.logo
+                        ? <img src={instituicao.logo} alt={`Logo de ${instituicao.nome}`} />
+                        : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#1a6e54" viewBox="0 0 256 256"><path d="M232,224H208V32h8a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16h8V224H24a8,8,0,0,0,0,16H232a8,8,0,0,0,0-16ZM64,32H192V224H160V184a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v40H64Zm80,192H112V192h32ZM88,64a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H96A8,8,0,0,1,88,64Zm48,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H144A8,8,0,0,1,136,64ZM88,104a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H96A8,8,0,0,1,88,104Zm48,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H144A8,8,0,0,1,136,104ZM88,144a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H96A8,8,0,0,1,88,144Zm48,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H144A8,8,0,0,1,136,144Z"></path></svg>}
+                    />
+                
+                <CampoTexto
+                    label="Tipo de Doação"
+                    variante="exibicao"
+                    value="Monetária"
+                />
+
+                <CampoTexto
+                    label="Valor"
+                    variante="exibicao"
+                    value={valor_formatado}
+                    complemento={formaPagamento && valor > 0 ? <TaxaMercadoPago valor={valor} forma_pagamento={formaPagamento} /> : undefined}
+                />
+
+                <CampoTexto
+                    label="Forma de Pagamento"
+                    variante="exibicao"
+                    className={Cartao ? "" : "confirmacao-largura-total"}
+                    value={formaPagamento ? ROTULO_FORMA_PAGAMENTO[formaPagamento] : ""}
+                    icone={Cartao ? <IconeCartaoCredito /> : <IconePix />}
+                />
+
+                {Cartao && (
+                    <CampoTexto
+                        label="Cartão Utilizado"
+                        variante="exibicao"
+                        value={dados.cartaoFinal ? `Cartão com final ${dados.cartaoFinal}` : "Cartão informado"}
+                    />
+                )}
+            </div>
+
+            <div className="confirmacao-opcoes">
+                <div className="confirmacao-recorrente">
+                    <label className="confirmacao-checkbox">
+                        <input
+                            type="checkbox"
+                            checked={recorrente}
+                            onChange={e => handleRecurrenceChange(e.target.checked)}
+                        />
+                        Tornar essa doação recorrente
+                    </label>
+
+                    <button
+                        type="button"
+                        className="confirmacao-info"
+                        onClick={() => setDialogoRecorrencia(true)}
+                        aria-label="O que é uma doação recorrente?"
+                    >
+                        <IconeInformacao />
+                    </button>
+                </div>
+                <label className="confirmacao-checkbox">
+                    <input
+                        type="checkbox"
+                        checked={aceitouTermos}
+                        onChange={e => setAceitouTermos(e.target.checked)}
+                    />
+                    <span>
+                        Concordo com os{" "}
+                        {/* TODO: Página de Termos ainda não existe */}
+                        <a href="/termos" target="_blank" rel="noopener noreferrer">Termos e Condições do NPET</a>
+                    </span>
+                </label>
+            </div>
+
+            {erro && <p className="confirmacao-erro" role="alert">{erro}</p>}
+
+            {formaPagamento === "pix" && (
+                <p className="confirmacao-nota">
+                    O código PIX tem validade de 30 minutos. Se você fechar a janela, poderá reabri-lo pelo Histórico enquanto não vencer.
+                </p>
+            )}
+
+            <Botao
+                variant="primario"
+                size="md"
+                className="confirmacao-botao"
+                onClick={handleConfirmClick}
+                disabled={!aceitouTermos || !formaPagamento || valor <= 0}
+            >
+                Confirmar Doação
+            </Botao>
+
+            {fase_exibida !== "formulario" && (
+                <PopUpDoacao
+                    fase={fase_exibida}
+                    pix={doacao?.pix}
+                    valor_formatado={valor_formatado}
+                    onConfirm={() => void processDonation()}
+                    onCancel={() => setFase("formulario")}
+                    onFinish={sair_do_popup}
+                    rotulo_saida={fase_exibida === "pix_gerado" ? "Ir para o Histórico" : undefined}
+                    lembrar_historico
+                />
+            )}
+
+            {dialogoRecorrencia && (
+                <ModalConfirmacao
+                    title={recorrente ? "Doação Recorrente" : "Tornar doação recorrente?"}
+                    primary_label={recorrente ? "Entendi" : "Tornar recorrente"}
+                    on_primary={recorrente ? () => setDialogoRecorrencia(false) : confirmRecurrence}
+                    secondary_label={recorrente ? undefined : "Cancelar"}
+                    on_secondary={() => setDialogoRecorrencia(false)}
+                    on_dismiss={() => setDialogoRecorrencia(false)}
+                >
+                    {recorrente ? (
+                        <p>
+                            Todo mês enviaremos um lembrete para você confirmar a doação de <strong>{valor_formatado}</strong> à instituição <strong>{instituicao.nome}</strong>.
+                        </p>
+                    ) : (
+                        <p>
+                            Caso essa opção esteja ativa, todo mês enviaremos um lembrete para você confirmar a doação
+                            de <strong>{valor_formatado}</strong> à instituição <strong>{instituicao.nome}</strong>.
+                        </p>
+                    )}
+                    <p>Você pode alterar essa opção a qualquer momento no histórico de doações.</p>
+                </ModalConfirmacao>
+            )}
+        </div>
+    );
+}
