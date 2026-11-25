@@ -1,4 +1,4 @@
-import type { TipoUsuario } from "../types/domain";
+import type { TipoUsuario, Session, TokenPayload } from "../types/domain";
 
 export const TOKEN_KEY = "token";
 export const ROLE_KEY = "role";
@@ -6,25 +6,33 @@ export const UNAUTHORIZED_EVENT = "npet:unauthorized";
 
 const VALID_ROLES: readonly TipoUsuario[] = ["administrador", "instituicao", "doador"];
 
-export interface Session {
-    token: string;
-    tipoUsuario: TipoUsuario;
-}
-
 function is_valid_role(value: string | null): value is TipoUsuario {
     return value !== null && (VALID_ROLES as readonly string[]).includes(value);
 }
 
-export function get_token_expiration_ms(token: string): number | null {
+function decode_token_payload(token: string): TokenPayload | null {
     try {
         const payload_part = token.split(".")[1];
         const base64 = payload_part.replace(/-/g, "+").replace(/_/g, "/");
         const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-        const payload = JSON.parse(atob(padded)) as { exp?: number };
-        return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+        return JSON.parse(atob(padded)) as TokenPayload;
     } catch {
         return null;
     }
+}
+
+export function get_token_expiration_ms(token: string): number | null {
+    try {
+        const payload = decode_token_payload(token);
+        return typeof payload?.exp === "number" ? payload.exp * 1000 : null;
+    } catch {
+        return null;
+    }
+}
+
+export function get_user_id(token: string): string | null {
+    const payload = decode_token_payload(token);
+    return payload?.sub ? String(payload.sub) : null;
 }
 
 export function is_token_expired(token: string): boolean {

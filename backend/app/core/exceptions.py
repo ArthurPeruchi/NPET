@@ -21,3 +21,19 @@ class NotFoundError(AppError):
 
 class ConflictError(AppError):
     status_code = 409
+
+
+class UnprocessableError(AppError):
+    status_code = 422
+
+
+class PaymentRequiredError(AppError):
+    """Pagamento recusado pela operadora (ex.: cartão sem saldo)."""
+
+    status_code = 402
+
+
+class PaymentGatewayError(AppError):
+    """Falha de comunicação com o Mercado Pago."""
+
+    status_code = 502

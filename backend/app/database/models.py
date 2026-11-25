@@ -1,16 +1,19 @@
 import enum
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from sqlalchemy import (
     CHAR,
     Boolean,
+    DateTime,
     Enum,
     ForeignKey,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     false,
+    func,
     true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -97,11 +100,30 @@ class Usuario(Base):
     tipo_usuario: Mapped[TipoUsuario] = mapped_column(
         pg_enum(TipoUsuario, "tipo_usuario")
     )
+    # Conta desativada pelo próprio usuário: bloqueia login/token, mas preserva o histórico.
+    ativo: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
 
     instituicao: Mapped["Instituicao | None"] = relationship(
         back_populates="usuario", uselist=False
     )
     doacoes: Mapped[list["Doacao"]] = relationship(back_populates="usuario")
+    tokens_redefinicao: Mapped[list["TokenRedefinicaoSenha"]] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan"
+    )
+
+
+class TokenRedefinicaoSenha(Base):
+    """Token de uso único para "esqueci minha senha". Só o hash SHA-256 é gravado."""
+
+    __tablename__ = "tokens_redefinicao_senha"
+
+    id_token: Mapped[int] = mapped_column(primary_key=True)
+    id_usuario: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expira_em: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    usado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    usuario: Mapped["Usuario"] = relationship(back_populates="tokens_redefinicao")
 
 
 class Instituicao(Base):
@@ -122,6 +144,8 @@ class Instituicao(Base):
     descricao: Mapped[str | None] = mapped_column(String(500))
     hora_abertura: Mapped[time | None]
     hora_fechamento: Mapped[time | None]
+    # Texto livre ("Fins de semana", "Sem horário fixo"); hora_abertura/fechamento ficam como fallback.
+    horario_funcionamento: Mapped[str | None] = mapped_column(String(100))
     qtd_animais: Mapped[int | None]
     aceita_voluntarios: Mapped[bool] = mapped_column(
         Boolean, server_default=false()
@@ -155,6 +179,10 @@ class Doacao(Base):
         pg_enum(StatusDoacao, "status_doacao"), server_default="pendente"
     )
     feedback_doacao: Mapped[str | None] = mapped_column(String(300))
+    feedback_visto: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Preenchida quando o pagamento é aprovado (RNE-013).
+    confirmada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     usuario: Mapped["Usuario"] = relationship(back_populates="doacoes")
     instituicao: Mapped["Instituicao"] = relationship(back_populates="doacoes")
@@ -178,6 +206,14 @@ class DoacaoDinheiro(Base):
         pg_enum(FormaPagamento, "forma_pagamento")
     )
     recorrente: Mapped[bool] = mapped_column(Boolean, server_default=false())
+    cartao_final: Mapped[str | None] = mapped_column(CHAR(4))
+
+    # Dados do pagamento no Mercado Pago (o backend nunca guarda número, validade ou CVV do cartão).
+    mp_payment_id: Mapped[str | None] = mapped_column(String(30), unique=True)
+    mp_status: Mapped[str | None] = mapped_column(String(30))
+    mp_status_detail: Mapped[str | None] = mapped_column(String(60))
+    pix_qr_code: Mapped[str | None] = mapped_column(Text)
+    pix_expira_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     doacao: Mapped["Doacao"] = relationship(back_populates="dinheiro")
 

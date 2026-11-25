@@ -93,15 +93,21 @@
 
 .campo-texto-valor-exibicao {
     flex: 1;
-    font-size: 15px;
+    font-size: 16px;
     color: var(--body-text-color);
     padding: 4px 0 0;
-    line-height: 1.5;
 }
 
 .campo-texto-placeholder {
     color: var(--secondary-neutral-color);
     font-style: italic;
+}
+
+.campo-texto-complemento {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 4px;
 }
 
 .campo-texto-toggle-senha {

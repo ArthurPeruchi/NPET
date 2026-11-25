@@ -22,14 +22,22 @@ CNPJ = Annotated[str, Field(pattern=r"^\d{14}$", description="14 dígitos, sem p
 UF = Annotated[str, Field(pattern=r"^[A-Z]{2}$", description="Sigla em maiúsculo, ex.: GO")]
 
 
-def _limitar_bytes_da_senha(senha: str) -> str:
+def _validar_senha(senha: str) -> str:
     # O bcrypt aceita no máximo 72 bytes; acentos ocupam mais de 1 byte em UTF-8.
     if len(senha.encode("utf-8")) > 72:
         raise ValueError("A senha deve ter no máximo 72 bytes.")
+    if not any(c.isupper() for c in senha):
+        raise ValueError("A senha deve conter ao menos uma letra maiúscula.")
+    if not any(c.islower() for c in senha):
+        raise ValueError("A senha deve conter ao menos uma letra minúscula.")
+    if not any(c.isdigit() for c in senha):
+        raise ValueError("A senha deve conter ao menos um número.")
     return senha
 
 
-Senha = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_limitar_bytes_da_senha)]
+# Vale para cadastro, troca e redefinição de senha. Login e desativação aceitam qualquer texto,
+# então contas criadas antes desta regra continuam entrando normalmente.
+Senha = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_validar_senha)]
 
 
 class ORMBase(BaseModel):
@@ -63,8 +71,29 @@ class InstituicaoRegister(BaseModel):
 
 class UsuarioUpdate(BaseModel):
     nome: str | None = Field(default=None, min_length=1, max_length=45)
+    email: EmailStr | None = None
+    senha: Senha | None = None
+    # Obrigatória quando o próprio usuário troca a senha (não se aplica ao admin editando outro usuário).
+    senha_atual: str | None = None
     telefone: str | None = Field(default=None, max_length=20)
     cpf: CPF | None = None
+
+
+class EsqueciSenhaRequest(BaseModel):
+    email: EmailStr
+
+
+class RedefinirSenhaRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    nova_senha: Senha
+
+
+class DesativarContaRequest(BaseModel):
+    senha: str = Field(min_length=1)
+
+
+class ExcluirContaRequest(DesativarContaRequest):
+    """Mesma confirmação da desativação: a senha atual do usuário."""
 
 
 class UsuarioOut(ORMBase):
@@ -75,6 +104,7 @@ class UsuarioOut(ORMBase):
     cpf: str | None
     provider: str
     tipo_usuario: TipoUsuario
+    ativo: bool
     # senha e provider_id ficam de fora de propósito
 
 

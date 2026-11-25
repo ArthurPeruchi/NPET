@@ -1,3 +1,4 @@
+import { NavLink } from "react-router-dom";
 import "./Rodape.css"
 
 const MAPA_SITE = [
@@ -7,6 +8,7 @@ const MAPA_SITE = [
   { label: 'Instituições Parceiras',href: '/parcerias' },
   { label: 'Nossas Avaliações',     href: '/avaliacoes' },
   { label: 'Suporte',               href: '/suporte' },
+  { label: 'Perfil',                href: '/perfil' },
 ];
  
 const CONTATO = [
@@ -118,9 +120,13 @@ export default function Rodape() {
                         <ul className="rodape-links">
                             {MAPA_SITE.map(item => (
                                 <li key={item.href}>
-                                    <a className="rodape-link" href={item.href}>
+                                    <NavLink 
+                                      className={({ isActive }) => `rodape-link${isActive ? " rodape-link--ativo" : ""}`} 
+                                      to={item.href} 
+                                      end={item.href === '/'}
+                                    >
                                         {item.label}
-                                    </a>
+                                    </NavLink>
                                 </li>
                             ))}
                         </ul>
